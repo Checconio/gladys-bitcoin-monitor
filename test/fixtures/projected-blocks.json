@@ -1,0 +1,10 @@
+[
+  {
+    "blockSize": 1200000,
+    "blockVSize": 997500.25,
+    "nTx": 2500,
+    "medianFee": 8.5
+  },
+  { "blockSize": 1100000, "blockVSize": 995000, "nTx": 2200, "medianFee": 6 },
+  { "blockSize": 1000000, "blockVSize": 990000, "nTx": 2000, "medianFee": 3 }
+]

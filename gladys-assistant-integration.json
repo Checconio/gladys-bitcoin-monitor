@@ -1,0 +1,262 @@
+{
+  "manifest_version": 1,
+  "type": "device",
+  "name": "Bitcoin Monitor",
+  "description": {
+    "en": "Monitor Bitcoin fees, mempool, network, market price and transaction costs.",
+    "fr": "Surveillez les frais, la mempool, le réseau, le prix et le coût des transactions Bitcoin."
+  },
+  "version": "1.0.0",
+  "docker_image": "ghcr.io/checconio/gladys-bitcoin-monitor:1.0.0",
+  "gladys_version": ">=4.86.0",
+  "cover_image": "https://raw.githubusercontent.com/Checconio/gladys-bitcoin-monitor/main/cover.png",
+  "categories": ["network", "services"],
+  "config_schema": [
+    {
+      "key": "general_section",
+      "type": "section",
+      "label": { "en": "General", "fr": "Général" },
+      "description": {
+        "en": "Use the public mempool.space service or the root URL of your own mempool instance. No account or API key is required.",
+        "fr": "Utilisez le service public mempool.space ou l'URL racine de votre propre instance mempool. Aucun compte ni clé d'API n'est nécessaire."
+      },
+      "links": [
+        {
+          "url": "https://mempool.space/docs/api/rest",
+          "label": { "en": "mempool REST API", "fr": "API REST mempool" }
+        }
+      ]
+    },
+    {
+      "key": "api_base_url",
+      "type": "string",
+      "label": { "en": "API base URL", "fr": "URL de base de l'API" },
+      "description": {
+        "en": "Root HTTP(S) URL without a path, query string or credentials.",
+        "fr": "URL HTTP(S) racine sans chemin, paramètres ni identifiants."
+      },
+      "required": true,
+      "default": "https://mempool.space"
+    },
+    {
+      "key": "currency",
+      "type": "select",
+      "label": { "en": "Currency", "fr": "Devise" },
+      "required": true,
+      "default": "EUR",
+      "options": [
+        { "value": "EUR", "label": { "en": "Euro (EUR)", "fr": "Euro (EUR)" } },
+        {
+          "value": "USD",
+          "label": { "en": "US dollar (USD)", "fr": "Dollar américain (USD)" }
+        },
+        {
+          "value": "GBP",
+          "label": {
+            "en": "Pound sterling (GBP)",
+            "fr": "Livre sterling (GBP)"
+          }
+        },
+        {
+          "value": "CHF",
+          "label": { "en": "Swiss franc (CHF)", "fr": "Franc suisse (CHF)" }
+        },
+        {
+          "value": "CAD",
+          "label": {
+            "en": "Canadian dollar (CAD)",
+            "fr": "Dollar canadien (CAD)"
+          }
+        },
+        {
+          "value": "AUD",
+          "label": {
+            "en": "Australian dollar (AUD)",
+            "fr": "Dollar australien (AUD)"
+          }
+        },
+        {
+          "value": "JPY",
+          "label": { "en": "Japanese yen (JPY)", "fr": "Yen japonais (JPY)" }
+        }
+      ]
+    },
+    {
+      "key": "polling_section",
+      "type": "section",
+      "label": { "en": "Polling", "fr": "Actualisation" },
+      "description": {
+        "en": "Conservative non-overlapping polling protects the public API. Temporary failures keep the last valid values.",
+        "fr": "Une actualisation prudente et sans chevauchement protège l'API publique. Les pannes temporaires conservent les dernières valeurs valides."
+      }
+    },
+    {
+      "key": "fast_poll_seconds",
+      "type": "number",
+      "label": {
+        "en": "Fast refresh interval (seconds)",
+        "fr": "Intervalle rapide (secondes)"
+      },
+      "required": true,
+      "default": 60,
+      "min": 30,
+      "max": 900
+    },
+    {
+      "key": "difficulty_poll_seconds",
+      "type": "number",
+      "label": {
+        "en": "Difficulty refresh interval (seconds)",
+        "fr": "Intervalle difficulté (secondes)"
+      },
+      "required": true,
+      "default": 600,
+      "min": 300,
+      "max": 3600
+    },
+    {
+      "key": "hashrate_poll_seconds",
+      "type": "number",
+      "label": {
+        "en": "Hashrate refresh interval (seconds)",
+        "fr": "Intervalle hashrate (secondes)"
+      },
+      "required": true,
+      "default": 1800,
+      "min": 600,
+      "max": 21600
+    },
+    {
+      "key": "simulator_section",
+      "type": "section",
+      "label": {
+        "en": "Transaction simulator defaults",
+        "fr": "Valeurs par défaut du simulateur"
+      },
+      "description": {
+        "en": "Transaction fees depend on virtual size and feerate, not on the transferred BTC amount. Use the action below for interactive changes.",
+        "fr": "Les frais dépendent de la taille virtuelle et du feerate, pas du montant en BTC transféré. Utilisez l'action ci-dessous pour les modifications interactives."
+      }
+    },
+    {
+      "key": "default_tx_vsize",
+      "type": "number",
+      "label": {
+        "en": "Default transaction vSize (vB)",
+        "fr": "Taille virtuelle par défaut (vB)"
+      },
+      "required": true,
+      "default": 250,
+      "min": 50,
+      "max": 10000
+    },
+    {
+      "key": "default_transfer_btc",
+      "type": "number",
+      "label": {
+        "en": "Default transfer amount (BTC)",
+        "fr": "Montant de transfert par défaut (BTC)"
+      },
+      "required": true,
+      "default": 0.01,
+      "min": 0.00000001,
+      "max": 21000000
+    },
+    {
+      "key": "default_priority",
+      "type": "select",
+      "label": { "en": "Default priority", "fr": "Priorité par défaut" },
+      "required": true,
+      "default": "fastest",
+      "options": [
+        { "value": "fastest", "label": { "en": "Fastest", "fr": "Rapide" } },
+        {
+          "value": "half_hour",
+          "label": { "en": "30 minutes", "fr": "30 minutes" }
+        },
+        { "value": "hour", "label": { "en": "1 hour", "fr": "1 heure" } },
+        { "value": "economy", "label": { "en": "Economy", "fr": "Économique" } }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "key": "test_connection",
+      "label": { "en": "Test connection", "fr": "Tester la connexion" },
+      "description": {
+        "en": "Validate the configured API using fee and tip-height requests.",
+        "fr": "Valide l'API configurée avec les requêtes de frais et de hauteur."
+      },
+      "timeout_seconds": 60
+    },
+    {
+      "key": "refresh_now",
+      "label": { "en": "Refresh now", "fr": "Actualiser maintenant" },
+      "description": {
+        "en": "Run a complete collection immediately.",
+        "fr": "Lance immédiatement une collecte complète."
+      },
+      "timeout_seconds": 120
+    },
+    {
+      "key": "update_simulator",
+      "label": {
+        "en": "Update transaction simulator",
+        "fr": "Modifier le simulateur de transaction"
+      },
+      "description": {
+        "en": "Set the local BTC amount, transaction vSize and priority.",
+        "fr": "Définit localement le montant BTC, la taille virtuelle et la priorité."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "amount_btc",
+          "type": "number",
+          "label": {
+            "en": "Transfer amount (BTC)",
+            "fr": "Montant transféré (BTC)"
+          },
+          "required": true,
+          "default": 0.01,
+          "min": 0,
+          "max": 21000000
+        },
+        {
+          "key": "tx_vsize",
+          "type": "number",
+          "label": {
+            "en": "Transaction vSize (vB)",
+            "fr": "Taille virtuelle (vB)"
+          },
+          "required": true,
+          "default": 250,
+          "min": 50,
+          "max": 10000
+        },
+        {
+          "key": "priority",
+          "type": "select",
+          "label": { "en": "Priority", "fr": "Priorité" },
+          "required": true,
+          "default": "fastest",
+          "options": [
+            {
+              "value": "fastest",
+              "label": { "en": "Fastest", "fr": "Rapide" }
+            },
+            {
+              "value": "half_hour",
+              "label": { "en": "30 minutes", "fr": "30 minutes" }
+            },
+            { "value": "hour", "label": { "en": "1 hour", "fr": "1 heure" } },
+            {
+              "value": "economy",
+              "label": { "en": "Economy", "fr": "Économique" }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

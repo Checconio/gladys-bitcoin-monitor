@@ -1,0 +1,10 @@
+{
+  "hashrates": [
+    { "timestamp": 1787270400, "avgHashrate": 812720091752157400000 }
+  ],
+  "difficulty": [
+    { "time": 1786217755, "height": 961632, "difficulty": 127479855693691.4 }
+  ],
+  "currentHashrate": 913201052794753900000,
+  "currentDifficulty": 127479855693691.4
+}
