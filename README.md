@@ -15,6 +15,12 @@ It uses the official [`@gladysassistant/integration-sdk`](https://github.com/Gla
 - Conservative, non-overlapping polling with timeout, exponential backoff, jitter, and `Retry-After` support.
 - Last-known-good data retention and an application connection status in Gladys.
 
+## Dashboard example
+
+The metrics exposed by Bitcoin Monitor can be combined into a complete Gladys dashboard for fees, transaction simulation, mempool pressure, block activity, mining difficulty, and market price.
+
+![Bitcoin Monitor dashboard example in Gladys](docs/images/bitcoin-monitor-dashboard.png)
+
 ## Discovered devices
 
 ```text
