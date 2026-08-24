@@ -24,7 +24,7 @@ jobs:
       packages: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ inputs.version != '' && inputs.version || '' }}
       - name: Set up QEMU

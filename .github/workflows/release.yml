@@ -19,11 +19,11 @@ jobs:
       version: ${{ steps.bump.outputs.version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 24
       - name: Bump package and manifest versions
@@ -32,8 +32,14 @@ jobs:
           RELEASE_TYPE: ${{ inputs.release-type }}
         run: |
           set -euo pipefail
-          version="$(npm version "$RELEASE_TYPE" --no-git-tag-version | tail -n1)"
-          version="${version#v}"
+          while true; do
+            version="$(npm version "$RELEASE_TYPE" --no-git-tag-version | tail -n1)"
+            version="${version#v}"
+            if ! git rev-parse --quiet --verify "refs/tags/${version}" >/dev/null; then
+              break
+            fi
+            echo "::notice::Tag ${version} already exists; advancing to the next ${RELEASE_TYPE} version"
+          done
           image="ghcr.io/${GITHUB_REPOSITORY,,}:${version}"
           tmp="$(mktemp)"
           jq --arg version "$version" --arg image "$image" \
