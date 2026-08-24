@@ -1,6 +1,6 @@
 {
   "name": "gladys-bitcoin-monitor",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "private": true,
   "description": "Bitcoin network, mempool, fee, market and transaction monitoring for Gladys Assistant.",
   "type": "module",

@@ -6,16 +6,22 @@
     "en": "Monitor Bitcoin fees, mempool, network, market price and transaction costs.",
     "fr": "Surveillez les frais, la mempool, le réseau, le prix et le coût des transactions Bitcoin."
   },
-  "version": "1.0.0",
-  "docker_image": "ghcr.io/checconio/gladys-bitcoin-monitor:1.0.0",
+  "version": "1.0.2",
+  "docker_image": "ghcr.io/checconio/gladys-bitcoin-monitor:1.0.2",
   "gladys_version": ">=4.86.0",
   "cover_image": "https://raw.githubusercontent.com/Checconio/gladys-bitcoin-monitor/main/cover.png",
-  "categories": ["network", "services"],
+  "categories": [
+    "network",
+    "services"
+  ],
   "config_schema": [
     {
       "key": "general_section",
       "type": "section",
-      "label": { "en": "General", "fr": "Général" },
+      "label": {
+        "en": "General",
+        "fr": "Général"
+      },
       "description": {
         "en": "Bitcoin Monitor uses the public mempool.space API at a fixed endpoint. No account or API key is required.",
         "fr": "Bitcoin Monitor utilise l'API publique mempool.space à une adresse fixe. Aucun compte ni clé d'API n'est nécessaire."
@@ -23,21 +29,36 @@
       "links": [
         {
           "url": "https://mempool.space/docs/api/rest",
-          "label": { "en": "mempool REST API", "fr": "API REST mempool" }
+          "label": {
+            "en": "mempool REST API",
+            "fr": "API REST mempool"
+          }
         }
       ]
     },
     {
       "key": "currency",
       "type": "select",
-      "label": { "en": "Currency", "fr": "Devise" },
+      "label": {
+        "en": "Currency",
+        "fr": "Devise"
+      },
       "required": true,
       "default": "EUR",
       "options": [
-        { "value": "EUR", "label": { "en": "Euro (EUR)", "fr": "Euro (EUR)" } },
+        {
+          "value": "EUR",
+          "label": {
+            "en": "Euro (EUR)",
+            "fr": "Euro (EUR)"
+          }
+        },
         {
           "value": "USD",
-          "label": { "en": "US dollar (USD)", "fr": "Dollar américain (USD)" }
+          "label": {
+            "en": "US dollar (USD)",
+            "fr": "Dollar américain (USD)"
+          }
         },
         {
           "value": "GBP",
@@ -48,7 +69,10 @@
         },
         {
           "value": "CHF",
-          "label": { "en": "Swiss franc (CHF)", "fr": "Franc suisse (CHF)" }
+          "label": {
+            "en": "Swiss franc (CHF)",
+            "fr": "Franc suisse (CHF)"
+          }
         },
         {
           "value": "CAD",
@@ -66,14 +90,20 @@
         },
         {
           "value": "JPY",
-          "label": { "en": "Japanese yen (JPY)", "fr": "Yen japonais (JPY)" }
+          "label": {
+            "en": "Japanese yen (JPY)",
+            "fr": "Yen japonais (JPY)"
+          }
         }
       ]
     },
     {
       "key": "polling_section",
       "type": "section",
-      "label": { "en": "Polling", "fr": "Actualisation" },
+      "label": {
+        "en": "Polling",
+        "fr": "Actualisation"
+      },
       "description": {
         "en": "Conservative non-overlapping polling protects the public API. Temporary failures keep the last valid values.",
         "fr": "Une actualisation prudente et sans chevauchement protège l'API publique. Les pannes temporaires conservent les dernières valeurs valides."
@@ -148,30 +178,57 @@
       },
       "required": true,
       "default": 0.01,
-      "min": 0.00000001,
+      "min": 1E-8,
       "max": 21000000
     },
     {
       "key": "default_priority",
       "type": "select",
-      "label": { "en": "Default priority", "fr": "Priorité par défaut" },
+      "label": {
+        "en": "Default priority",
+        "fr": "Priorité par défaut"
+      },
       "required": true,
       "default": "fastest",
       "options": [
-        { "value": "fastest", "label": { "en": "Fastest", "fr": "Rapide" } },
+        {
+          "value": "fastest",
+          "label": {
+            "en": "Fastest",
+            "fr": "Rapide"
+          }
+        },
         {
           "value": "half_hour",
-          "label": { "en": "30 minutes", "fr": "30 minutes" }
+          "label": {
+            "en": "30 minutes",
+            "fr": "30 minutes"
+          }
         },
-        { "value": "hour", "label": { "en": "1 hour", "fr": "1 heure" } },
-        { "value": "economy", "label": { "en": "Economy", "fr": "Économique" } }
+        {
+          "value": "hour",
+          "label": {
+            "en": "1 hour",
+            "fr": "1 heure"
+          }
+        },
+        {
+          "value": "economy",
+          "label": {
+            "en": "Economy",
+            "fr": "Économique"
+          }
+        }
       ]
     }
   ],
   "actions": [
     {
       "key": "test_connection",
-      "label": { "en": "Test connection", "fr": "Tester la connexion" },
+      "label": {
+        "en": "Test connection",
+        "fr": "Tester la connexion"
+      },
       "description": {
         "en": "Validate access to mempool.space using fee and tip-height requests.",
         "fr": "Valide l'accès à mempool.space avec les requêtes de frais et de hauteur."
@@ -180,7 +237,10 @@
     },
     {
       "key": "refresh_now",
-      "label": { "en": "Refresh now", "fr": "Actualiser maintenant" },
+      "label": {
+        "en": "Refresh now",
+        "fr": "Actualiser maintenant"
+      },
       "description": {
         "en": "Run a complete collection immediately.",
         "fr": "Lance immédiatement une collecte complète."
@@ -226,22 +286,40 @@
         {
           "key": "priority",
           "type": "select",
-          "label": { "en": "Priority", "fr": "Priorité" },
+          "label": {
+            "en": "Priority",
+            "fr": "Priorité"
+          },
           "required": true,
           "default": "fastest",
           "options": [
             {
               "value": "fastest",
-              "label": { "en": "Fastest", "fr": "Rapide" }
+              "label": {
+                "en": "Fastest",
+                "fr": "Rapide"
+              }
             },
             {
               "value": "half_hour",
-              "label": { "en": "30 minutes", "fr": "30 minutes" }
+              "label": {
+                "en": "30 minutes",
+                "fr": "30 minutes"
+              }
             },
-            { "value": "hour", "label": { "en": "1 hour", "fr": "1 heure" } },
+            {
+              "value": "hour",
+              "label": {
+                "en": "1 hour",
+                "fr": "1 heure"
+              }
+            },
             {
               "value": "economy",
-              "label": { "en": "Economy", "fr": "Économique" }
+              "label": {
+                "en": "Economy",
+                "fr": "Économique"
+              }
             }
           ]
         }
