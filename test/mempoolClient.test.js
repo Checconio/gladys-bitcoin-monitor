@@ -69,6 +69,18 @@ test("handles a normal HTTP 200 response", async () => {
   assert.deepEqual(await client.getPreciseFees(), expected);
 });
 
+test("rejects unsafe or ambiguous internal API base URLs", () => {
+  for (const baseUrl of [
+    "file:///etc/passwd",
+    "https://user:pass@example.com",
+    "https://example.com/prefix",
+    "https://example.com?next=evil",
+    "not a url",
+  ]) {
+    assert.throws(() => new MempoolClient({ baseUrl }), /API base URL/);
+  }
+});
+
 test("rejects invalid JSON without converting it to empty data", async () => {
   const client = new MempoolClient({
     baseUrl: "https://mempool.example",

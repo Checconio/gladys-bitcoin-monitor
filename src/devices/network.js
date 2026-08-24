@@ -61,12 +61,18 @@ export function buildNetworkDevice(gladys) {
         ids,
         NETWORK_FEATURES.BLOCK_WEIGHT,
         "Last block weight (WU)",
+        {
+          category: DEVICE_FEATURE_CATEGORIES.DATA,
+          type: DEVICE_FEATURE_TYPES.DATA.SIZE,
+        },
       ),
       numericFeature(
         ids,
         NETWORK_FEATURES.DIFFICULTY_CHANGE,
         "Difficulty adjustment estimate",
         {
+          category: DEVICE_FEATURE_CATEGORIES.LEVEL_SENSOR,
+          type: DEVICE_FEATURE_TYPES.SENSOR.DECIMAL,
           unit: DEVICE_FEATURE_UNITS.PERCENT,
           min: -100,
           max: 100,
@@ -77,6 +83,8 @@ export function buildNetworkDevice(gladys) {
         NETWORK_FEATURES.DIFFICULTY_PROGRESS,
         "Difficulty progress",
         {
+          category: DEVICE_FEATURE_CATEGORIES.LEVEL_SENSOR,
+          type: DEVICE_FEATURE_TYPES.SENSOR.DECIMAL,
           unit: DEVICE_FEATURE_UNITS.PERCENT,
           min: 0,
           max: 100,
@@ -112,13 +120,21 @@ export function buildNetworkDevice(gladys) {
         ids,
         NETWORK_FEATURES.HASHRATE,
         "Network hashrate (EH/s)",
-        { max: 1_000_000 },
+        {
+          category: DEVICE_FEATURE_CATEGORIES.DATARATE,
+          type: DEVICE_FEATURE_TYPES.DATARATE.RATE,
+          max: 1_000_000,
+        },
       ),
       numericFeature(
         ids,
         NETWORK_FEATURES.DIFFICULTY,
         "Network difficulty (T)",
-        { max: 1_000_000 },
+        {
+          category: DEVICE_FEATURE_CATEGORIES.LEVEL_SENSOR,
+          type: DEVICE_FEATURE_TYPES.SENSOR.DECIMAL,
+          max: 1_000_000,
+        },
       ),
     ],
   };

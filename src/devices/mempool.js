@@ -22,7 +22,11 @@ export const MEMPOOL_FEATURES = Object.freeze({
 export function buildMempoolDevice(gladys) {
   const ids = getDeviceIds(gladys, DEVICE_KEYS.MEMPOOL);
   const backlog = (key, name) =>
-    numericFeature(ids, key, `${name} (vMB)`, { max: 1_000_000 });
+    numericFeature(ids, key, `${name} (vMB)`, {
+      category: DEVICE_FEATURE_CATEGORIES.DATA,
+      type: DEVICE_FEATURE_TYPES.DATA.SIZE,
+      max: 1_000_000,
+    });
   return {
     name: "Bitcoin Mempool",
     external_id: ids.device,
@@ -37,8 +41,8 @@ export function buildMempoolDevice(gladys) {
         MEMPOOL_FEATURES.TOTAL_FEES,
         "Total mempool fees (sats)",
         {
-          category: DEVICE_FEATURE_CATEGORIES.COUNTER_SENSOR,
-          type: DEVICE_FEATURE_TYPES.SENSOR.INTEGER,
+          category: DEVICE_FEATURE_CATEGORIES.CURRENCY,
+          type: DEVICE_FEATURE_TYPES.CURRENCY.DECIMAL,
         },
       ),
       backlog(MEMPOOL_FEATURES.GE_1, "Backlog >= 1 sat/vB"),

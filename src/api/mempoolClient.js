@@ -1,8 +1,28 @@
-import { normalizeApiBaseUrl } from "../config.js";
-
 const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_MAX_RETRIES = 2;
 const MAX_RETRY_DELAY_MS = 30_000;
+
+function normalizeApiBaseUrl(value) {
+  let url;
+  try {
+    url = new URL(String(value));
+  } catch {
+    throw new Error("API base URL must be a valid absolute URL");
+  }
+  if (!["http:", "https:"].includes(url.protocol)) {
+    throw new Error("API base URL must use HTTP or HTTPS");
+  }
+  if (url.username || url.password) {
+    throw new Error("API base URL must not contain credentials");
+  }
+  if (url.search || url.hash) {
+    throw new Error("API base URL must not contain a query string or fragment");
+  }
+  if (url.pathname !== "/" && url.pathname !== "") {
+    throw new Error("API base URL must not contain a path");
+  }
+  return url.origin;
+}
 
 export class MempoolApiError extends Error {
   constructor(message, { status, path, code, retryAfterMs, cause } = {}) {

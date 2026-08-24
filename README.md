@@ -35,21 +35,20 @@ After the first public release is indexed:
 1. Open **Integrations** in Gladys.
 2. Search for **Bitcoin Monitor**.
 3. Review the manifest and install it.
-4. Configure the API URL, currency, polling, and simulator defaults.
+4. Configure the currency, polling, and simulator defaults.
 5. Open **Discovery** and create the five virtual devices (or only the ones you need).
 
 ## Configuration
 
-| Key                       |                 Default | Accepted values                                                 |
-| ------------------------- | ----------------------: | --------------------------------------------------------------- |
-| `api_base_url`            | `https://mempool.space` | Root HTTP(S) URL, with no path, credentials, query, or fragment |
-| `currency`                |                   `EUR` | EUR, USD, GBP, CHF, CAD, AUD, JPY                               |
-| `fast_poll_seconds`       |                      60 | 30–900 seconds                                                  |
-| `difficulty_poll_seconds` |                     600 | 300–3600 seconds                                                |
-| `hashrate_poll_seconds`   |                    1800 | 600–21600 seconds                                               |
-| `default_tx_vsize`        |                     250 | 50–10000 vB                                                     |
-| `default_transfer_btc`    |                    0.01 | 0.00000001–21000000 BTC                                         |
-| `default_priority`        |               `fastest` | fastest, half_hour, hour, economy                               |
+| Key                       |   Default | Accepted values                   |
+| ------------------------- | --------: | --------------------------------- |
+| `currency`                |     `EUR` | EUR, USD, GBP, CHF, CAD, AUD, JPY |
+| `fast_poll_seconds`       |        60 | 30–900 seconds                    |
+| `difficulty_poll_seconds` |       600 | 300–3600 seconds                  |
+| `hashrate_poll_seconds`   |      1800 | 600–21600 seconds                 |
+| `default_tx_vsize`        |       250 | 50–10000 vB                       |
+| `default_transfer_btc`    |      0.01 | 0.00000001–21000000 BTC           |
+| `default_priority`        | `fastest` | fastest, half_hour, hour, economy |
 
 The Configuration screen also exposes **Test connection**, **Refresh now**, and **Update transaction simulator** actions.
 
@@ -161,7 +160,7 @@ The release workflow publishes `linux/amd64` and `linux/arm64` images to GHCR.
 
 ## Privacy and security
 
-Bitcoin Monitor sends only the documented public-data requests to the configured mempool API. It has no telemetry, tracker, account, secret, inbound port, hardware access, sub-container, shell command, or Docker socket access. The configured API root accepts HTTP(S) only and rejects credentials, paths, query strings, and fragments. A self-hosted LAN URL remains supported intentionally.
+Bitcoin Monitor sends only documented public-data requests to the fixed `https://mempool.space` endpoint. It has no telemetry, tracker, account, secret, inbound port, hardware access, sub-container, shell command, or Docker socket access. The API endpoint is not exposed in the Gladys configuration and legacy `api_base_url` values are ignored.
 
 ## License
 

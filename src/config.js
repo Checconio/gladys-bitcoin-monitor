@@ -12,7 +12,6 @@ export const SUPPORTED_CURRENCIES = Object.freeze([
 ]);
 
 export const DEFAULT_CONFIG = Object.freeze({
-  api_base_url: "https://mempool.space",
   currency: "EUR",
   fast_poll_seconds: 60,
   difficulty_poll_seconds: 600,
@@ -32,28 +31,6 @@ function numberInRange(value, name, min, max) {
     );
   }
   return parsed;
-}
-
-export function normalizeApiBaseUrl(value) {
-  let url;
-  try {
-    url = new URL(String(value));
-  } catch {
-    throw new Error("API base URL must be a valid absolute URL");
-  }
-  if (!["http:", "https:"].includes(url.protocol)) {
-    throw new Error("API base URL must use HTTP or HTTPS");
-  }
-  if (url.username || url.password) {
-    throw new Error("API base URL must not contain credentials");
-  }
-  if (url.search || url.hash) {
-    throw new Error("API base URL must not contain a query string or fragment");
-  }
-  if (url.pathname !== "/" && url.pathname !== "") {
-    throw new Error("API base URL must not contain a path");
-  }
-  return url.origin;
 }
 
 export function normalizeConfig(raw = {}) {
@@ -76,9 +53,6 @@ export function normalizeConfig(raw = {}) {
   }
 
   return {
-    api_base_url: normalizeApiBaseUrl(
-      raw.api_base_url ?? DEFAULT_CONFIG.api_base_url,
-    ),
     currency,
     fast_poll_seconds: numberInRange(
       raw.fast_poll_seconds ?? DEFAULT_CONFIG.fast_poll_seconds,

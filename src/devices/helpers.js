@@ -8,8 +8,8 @@ export function numericFeature(
   key,
   name,
   {
-    category = DEVICE_FEATURE_CATEGORIES.UNKNOWN,
-    type = DEVICE_FEATURE_TYPES.SENSOR.DECIMAL,
+    category,
+    type,
     unit,
     min = 0,
     max = Number.MAX_SAFE_INTEGER,
@@ -17,6 +17,11 @@ export function numericFeature(
     keepHistory = true,
   } = {},
 ) {
+  if (!category || !type) {
+    throw new TypeError(
+      `A Gladys category and type are required for numeric feature ${key}`,
+    );
+  }
   const feature = {
     name,
     external_id: ids.feature(key),

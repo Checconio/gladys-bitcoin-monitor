@@ -43,7 +43,6 @@ export class Collector {
 
   setConfig(config) {
     this.config = config;
-    this.client.setBaseUrl(config.api_base_url);
   }
 
   setSimulatorState(state) {
@@ -102,8 +101,8 @@ export class Collector {
     this.failedFastCycles += 1;
     if (this.failedFastCycles >= 3) {
       await this.updateConnectionStatus(false, {
-        en: "Unable to reach the configured mempool API.",
-        fr: "Impossible de joindre l'API mempool configurée.",
+        en: "Unable to reach the mempool.space API.",
+        fr: "Impossible de joindre l'API mempool.space.",
       });
     }
   }
@@ -285,8 +284,8 @@ export class Collector {
       return { fees, height };
     } catch (error) {
       await this.updateConnectionStatus(false, {
-        en: "Unable to reach the configured mempool API.",
-        fr: "Impossible de joindre l'API mempool configurée.",
+        en: "Unable to reach the mempool.space API.",
+        fr: "Impossible de joindre l'API mempool.space.",
       });
       throw error;
     }

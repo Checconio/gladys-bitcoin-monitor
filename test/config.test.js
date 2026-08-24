@@ -4,14 +4,14 @@ import { DEVICE_FEATURE_UNITS } from "@gladysassistant/integration-sdk";
 import {
   DEFAULT_CONFIG,
   getGladysCurrencyUnit,
-  normalizeApiBaseUrl,
   normalizeConfig,
 } from "../src/config.js";
+import { MEMPOOL_API_BASE_URL } from "../src/constants.js";
+import { BitcoinMonitorIntegration } from "../src/integration.js";
 
 test("normalizes a complete valid configuration", () => {
   assert.deepEqual(
     normalizeConfig({
-      api_base_url: "https://mempool.example/",
       currency: "usd",
       fast_poll_seconds: "30",
       difficulty_poll_seconds: "300",
@@ -21,7 +21,6 @@ test("normalizes a complete valid configuration", () => {
       default_priority: "economy",
     }),
     {
-      api_base_url: "https://mempool.example",
       currency: "USD",
       fast_poll_seconds: 30,
       difficulty_poll_seconds: 300,
@@ -37,16 +36,17 @@ test("default configuration stays valid", () => {
   assert.deepEqual(normalizeConfig(), DEFAULT_CONFIG);
 });
 
-test("rejects unsafe or ambiguous API base URLs", () => {
-  for (const url of [
-    "file:///etc/passwd",
-    "https://user:pass@example.com",
-    "https://example.com/prefix",
-    "https://example.com?next=evil",
-    "not a url",
-  ]) {
-    assert.throws(() => normalizeApiBaseUrl(url), /API base URL/);
-  }
+test("ignores legacy API URL values because the endpoint is fixed", () => {
+  const config = normalizeConfig({ api_base_url: "https://example.com" });
+  assert.equal(Object.hasOwn(config, "api_base_url"), false);
+  assert.equal(MEMPOOL_API_BASE_URL, "https://mempool.space");
+
+  const integration = new BitcoinMonitorIntegration({
+    gladys: {},
+    dataDirectory: ".",
+  });
+  integration.collector.setConfig(config);
+  assert.equal(integration.client.baseUrl, MEMPOOL_API_BASE_URL);
 });
 
 test("validates currency, intervals, vSize, amount and priority", () => {

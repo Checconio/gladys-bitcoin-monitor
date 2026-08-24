@@ -17,6 +17,18 @@ function fakeGladys() {
   };
 }
 
+const GLADYS_TRANSLATED_FEATURE_PAIRS = new Set([
+  `${DEVICE_FEATURE_CATEGORIES.COUNTER_SENSOR}/${DEVICE_FEATURE_TYPES.SENSOR.INTEGER}`,
+  `${DEVICE_FEATURE_CATEGORIES.CURRENCY}/${DEVICE_FEATURE_TYPES.CURRENCY.DECIMAL}`,
+  `${DEVICE_FEATURE_CATEGORIES.DATA}/${DEVICE_FEATURE_TYPES.DATA.SIZE}`,
+  `${DEVICE_FEATURE_CATEGORIES.DATARATE}/${DEVICE_FEATURE_TYPES.DATARATE.RATE}`,
+  `${DEVICE_FEATURE_CATEGORIES.DURATION}/${DEVICE_FEATURE_TYPES.DURATION.DECIMAL}`,
+  `${DEVICE_FEATURE_CATEGORIES.LEVEL_SENSOR}/${DEVICE_FEATURE_TYPES.SENSOR.DECIMAL}`,
+  `${DEVICE_FEATURE_CATEGORIES.RISK}/${DEVICE_FEATURE_TYPES.RISK.INTEGER}`,
+  `${DEVICE_FEATURE_CATEGORIES.TEXT}/${DEVICE_FEATURE_TYPES.TEXT.SELECT}`,
+  `${DEVICE_FEATURE_CATEGORIES.TEXT}/${DEVICE_FEATURE_TYPES.TEXT.TEXT}`,
+]);
+
 test("discovers exactly the five logical Bitcoin devices with stable unique IDs", () => {
   const devices = buildDiscoveredDevices(fakeGladys(), normalizeConfig());
   assert.deepEqual(
@@ -58,6 +70,20 @@ test("uses the official text/select contract for direct priority editing", () =>
     ["fastest", "half_hour", "hour", "economy"],
   );
   assert.equal(amount.read_only, true);
+});
+
+test("uses only category/type pairs translated by Gladys Discovery", () => {
+  const devices = buildDiscoveredDevices(fakeGladys(), normalizeConfig());
+  for (const device of devices) {
+    for (const feature of device.features) {
+      const pair = `${feature.category}/${feature.type}`;
+      assert.equal(
+        GLADYS_TRANSLATED_FEATURE_PAIRS.has(pair),
+        true,
+        `${device.name}: ${feature.name} uses untranslated pair ${pair}`,
+      );
+    }
+  }
 });
 
 test("adds the ISO currency code when Gladys has no matching fiat unit", () => {

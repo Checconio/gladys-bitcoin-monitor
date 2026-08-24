@@ -24,7 +24,11 @@ export const FEES_FEATURES = Object.freeze({
 });
 
 const feeFeature = (ids, key, name) =>
-  numericFeature(ids, key, `${name} (sat/vB)`, { max: 1_000_000 });
+  numericFeature(ids, key, `${name} (sat/vB)`, {
+    category: DEVICE_FEATURE_CATEGORIES.CURRENCY,
+    type: DEVICE_FEATURE_TYPES.CURRENCY.DECIMAL,
+    max: 1_000_000,
+  });
 
 export function buildFeesDevice(gladys) {
   const ids = getDeviceIds(gladys, DEVICE_KEYS.FEES);
@@ -65,6 +69,10 @@ export function buildFeesDevice(gladys) {
         ids,
         FEES_FEATURES.BLOCK_1_VSIZE,
         "Projected block 1 virtual size (vB)",
+        {
+          category: DEVICE_FEATURE_CATEGORIES.DATA,
+          type: DEVICE_FEATURE_TYPES.DATA.SIZE,
+        },
       ),
       feeFeature(ids, FEES_FEATURES.SPREAD, "Fast/economy spread"),
       numericFeature(

@@ -17,8 +17,8 @@
       "type": "section",
       "label": { "en": "General", "fr": "Général" },
       "description": {
-        "en": "Use the public mempool.space service or the root URL of your own mempool instance. No account or API key is required.",
-        "fr": "Utilisez le service public mempool.space ou l'URL racine de votre propre instance mempool. Aucun compte ni clé d'API n'est nécessaire."
+        "en": "Bitcoin Monitor uses the public mempool.space API at a fixed endpoint. No account or API key is required.",
+        "fr": "Bitcoin Monitor utilise l'API publique mempool.space à une adresse fixe. Aucun compte ni clé d'API n'est nécessaire."
       },
       "links": [
         {
@@ -26,17 +26,6 @@
           "label": { "en": "mempool REST API", "fr": "API REST mempool" }
         }
       ]
-    },
-    {
-      "key": "api_base_url",
-      "type": "string",
-      "label": { "en": "API base URL", "fr": "URL de base de l'API" },
-      "description": {
-        "en": "Root HTTP(S) URL without a path, query string or credentials.",
-        "fr": "URL HTTP(S) racine sans chemin, paramètres ni identifiants."
-      },
-      "required": true,
-      "default": "https://mempool.space"
     },
     {
       "key": "currency",
@@ -184,8 +173,8 @@
       "key": "test_connection",
       "label": { "en": "Test connection", "fr": "Tester la connexion" },
       "description": {
-        "en": "Validate the configured API using fee and tip-height requests.",
-        "fr": "Valide l'API configurée avec les requêtes de frais et de hauteur."
+        "en": "Validate access to mempool.space using fee and tip-height requests.",
+        "fr": "Valide l'accès à mempool.space avec les requêtes de frais et de hauteur."
       },
       "timeout_seconds": 60
     },

@@ -8,6 +8,7 @@ import {
 import {
   DATA_DIRECTORY,
   DEVICE_KEYS,
+  MEMPOOL_API_BASE_URL,
   PRIORITIES,
   getDeviceIds,
 } from "./constants.js";
@@ -44,7 +45,7 @@ export class BitcoinMonitorIntegration {
       logger: simulatorLogger,
     });
     this.simulatorState = simulatorDefaults(this.config);
-    this.client = new MempoolClient({ baseUrl: this.config.api_base_url });
+    this.client = new MempoolClient({ baseUrl: MEMPOOL_API_BASE_URL });
     this.collector = new Collector({
       gladys,
       client: this.client,

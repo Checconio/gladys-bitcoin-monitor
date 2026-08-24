@@ -61,6 +61,8 @@ export function buildSimulatorDevice(gladys, config) {
         max: 21_000_000,
       }),
       numericFeature(ids, SIMULATOR_FEATURES.VSIZE, "Transaction vSize (vB)", {
+        category: DEVICE_FEATURE_CATEGORIES.DATA,
+        type: DEVICE_FEATURE_TYPES.DATA.SIZE,
         min: 50,
         max: 10_000,
       }),
@@ -74,6 +76,8 @@ export function buildSimulatorDevice(gladys, config) {
         SIMULATOR_FEATURES.SELECTED_RATE,
         "Selected fee rate (sat/vB)",
         {
+          category: DEVICE_FEATURE_CATEGORIES.CURRENCY,
+          type: DEVICE_FEATURE_TYPES.CURRENCY.DECIMAL,
           max: 1_000_000,
         },
       ),
@@ -82,8 +86,8 @@ export function buildSimulatorDevice(gladys, config) {
         SIMULATOR_FEATURES.SELECTED_SATS,
         "Selected fee (sats)",
         {
-          category: DEVICE_FEATURE_CATEGORIES.COUNTER_SENSOR,
-          type: DEVICE_FEATURE_TYPES.SENSOR.INTEGER,
+          category: DEVICE_FEATURE_CATEGORIES.CURRENCY,
+          type: DEVICE_FEATURE_TYPES.CURRENCY.DECIMAL,
         },
       ),
       numericFeature(ids, SIMULATOR_FEATURES.SELECTED_BTC, "Selected fee", {
@@ -98,6 +102,8 @@ export function buildSimulatorDevice(gladys, config) {
         SIMULATOR_FEATURES.SELECTED_PERCENT,
         "Selected fee percentage",
         {
+          category: DEVICE_FEATURE_CATEGORIES.LEVEL_SENSOR,
+          type: DEVICE_FEATURE_TYPES.SENSOR.DECIMAL,
           unit: DEVICE_FEATURE_UNITS.PERCENT,
           max: 1e12,
         },

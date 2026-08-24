@@ -12,7 +12,6 @@ function externalIds(_namespace, deviceKey) {
 
 function healthyClient() {
   return {
-    setBaseUrl() {},
     async getPreciseFees() {
       return {
         fastestFee: 8,

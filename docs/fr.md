@@ -2,21 +2,21 @@
 
 ## Présentation
 
-Bitcoin Monitor est une intégration externe pour Gladys Assistant qui surveille les données publiques du réseau Bitcoin au moyen de l'API REST mempool configurée. Elle ne demande aucun compte, aucune clé d'API, aucun broker MQTT, aucun flux Node-RED et aucune définition manuelle de feature. La découverte propose cinq appareils virtuels ; l'utilisateur choisit ceux qu'il souhaite créer.
+Bitcoin Monitor est une intégration externe pour Gladys Assistant qui surveille les données publiques du réseau Bitcoin au moyen de l'API REST de mempool.space. Elle ne demande aucun compte, aucune clé d'API, aucun broker MQTT, aucun flux Node-RED et aucune définition manuelle de feature. La découverte propose cinq appareils virtuels ; l'utilisateur choisit ceux qu'il souhaite créer.
 
 L'intégration est informative. Les estimations de frais ne garantissent aucun délai de confirmation et le score d'opportunité est une heuristique transparente, pas un conseil financier.
 
 ## Prérequis et installation
 
 - Gladys Assistant 4.86.0 ou plus récent.
-- Un accès Internet à `https://mempool.space`, ou un accès réseau unicast à une instance mempool personnelle compatible.
+- Un accès Internet à `https://mempool.space`.
 - Aucun abonnement Gladys Plus et aucun compte tiers.
 
 Installez **Bitcoin Monitor** depuis le catalogue décentralisé des intégrations. Ouvrez sa page **Configuration**, enregistrez les réglages souhaités, puis ouvrez **Découverte**. Créez les cinq appareils proposés, ou seulement ceux dont vous avez besoin. L'intégration n'utilise jamais d'API Gladys interne non documentée pour les créer automatiquement.
 
 ## Configuration
 
-- **URL de base de l'API** : URL HTTP(S) racine de mempool.space ou d'une instance personnelle compatible. Les chemins, identifiants, paramètres et fragments sont refusés. Une URL HTTP du réseau local est autorisée pour l'auto-hébergement.
+- L'adresse de l'API est fixée à `https://mempool.space` et n'est pas modifiable dans Gladys. Les anciennes valeurs de configuration `api_base_url` sont ignorées.
 - **Devise** : EUR, USD, GBP, CHF, CAD, AUD ou JPY. Ce sont les devises actuellement renvoyées par `/api/v1/prices`.
 - **Actualisation rapide** : frais, blocs projetés, mempool, prix et hauteur, de 30 à 900 secondes (60 par défaut).
 - **Actualisation difficulté** : de 300 à 3600 secondes (600 par défaut).
@@ -109,24 +109,20 @@ Gladys 4.86 ne fournit pas de champ numérique générique modifiable pour une f
 
 Chaque famille de collecte utilise `setTimeout` uniquement après la fin de l'exécution précédente : les requêtes ne s'accumulent pas. Un léger jitter évite les rafales synchronisées. Le client HTTP applique un timeout et ne réessaie que les erreurs réseau, HTTP 429 et HTTP 5xx. Les délais utilisent un backoff exponentiel avec jitter, respectent `Retry-After` et sont plafonnés à 30 secondes.
 
-Le service public mempool.space ne promet pas de quota public fixe. Conservez les intervalles par défaut, sauf si vous exploitez votre propre instance. Bitcoin Monitor ne télécharge jamais tous les txids de la mempool, toutes les transactions ni de longs historiques de blocs.
+Le service public mempool.space ne promet pas de quota public fixe. Conservez les intervalles par défaut afin de limiter les requêtes. Bitcoin Monitor ne télécharge jamais tous les txids de la mempool, toutes les transactions ni de longs historiques de blocs.
 
 En cas de panne temporaire, les dernières valeurs valides restent en mémoire ; elles ne sont pas remplacées par zéro ou null. Après trois cycles rapides sans aucune requête importante réussie, Gladys affiche l'API mempool comme indisponible. La collecte reprend automatiquement au retour du service.
-
-## Instance mempool personnelle
-
-Saisissez uniquement son URL racine, par exemple `http://192.168.1.20:8080`. Elle doit exposer les endpoints documentés avec des réponses compatibles. L'intégration autorise volontairement les adresses privées pour les déploiements locaux, tout en refusant les syntaxes URL ambiguës et les identifiants intégrés.
 
 ## Dépannage
 
 - **Aucun appareil** : ouvrez l'onglet Découverte et lancez la recherche ; la création reste une action utilisateur.
 - **Aucune valeur sur un appareil** : vérifiez que l'appareil et sa structure actuelle ont été créés. Utilisez **Mettre à jour** dans la découverte après un changement de devise ou une mise à niveau.
-- **Échec du test de connexion** : vérifiez le DNS, le pare-feu et que l'URL désigne la racine, pas `/api`.
-- **HTTP 429 dans les logs** : augmentez l'intervalle rapide ou utilisez une instance personnelle.
+- **Échec du test de connexion** : vérifiez le DNS et l'accès du pare-feu à `https://mempool.space`.
+- **HTTP 429 dans les logs** : augmentez l'intervalle d'actualisation rapide.
 - **Certaines métriques restent anciennes** : l'endpoint peut être temporairement indisponible ou invalide. Bitcoin Monitor conserve volontairement la dernière bonne valeur.
 - **Montant/vSize non modifiables sur la carte** : utilisez **Configuration → Modifier le simulateur de transaction** ; il s'agit de la limite Gladys décrite ci-dessus.
 - **Avertissement de persistance** : vérifiez que Gladys a monté le dossier `/data` de l'intégration et qu'il appartient à l'UID/GID 1000.
 
 ## Confidentialité
 
-Il n'existe aucune télémétrie, mesure d'audience, tracker ni compte utilisateur. Seules des requêtes GET de données publiques sont envoyées à l'API mempool configurée. Le montant BTC, la vSize et la priorité restent locaux, ne figurent jamais dans ces requêtes et ne quittent pas le volume `/data`. Aucun secret n'est requis ni journalisé.
+Il n'existe aucune télémétrie, mesure d'audience, tracker ni compte utilisateur. Seules des requêtes GET de données publiques sont envoyées à `https://mempool.space`. Le montant BTC, la vSize et la priorité restent locaux, ne figurent jamais dans ces requêtes et ne quittent pas le volume `/data`. Aucun secret n'est requis ni journalisé.
