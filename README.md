@@ -152,7 +152,7 @@ The release workflow publishes `linux/amd64` and `linux/arm64` images to GHCR.
 1. Create a public GitHub repository and update the owner in `docker_image` and `cover_image` if it is not `Checconio`.
 2. Add the repository topic `gladys-assistant-integration`.
 3. Push `main`; ensure CI passes.
-4. For the initial `1.0.0` release, create and push the annotated `v1.0.0` tag; the Build workflow publishes `:1.0.0` and `:latest`. For later releases, use **Actions → Release** with `patch`, `minor`, or `major` so all version fields are bumped together.
+4. Release tags use the plain `X.Y.Z` format, without a `v` prefix. For later releases, use **Actions → Release** with `patch`, `minor`, or `major` so all version fields are bumped together; the Build workflow publishes the matching version and `:latest` tags.
 5. Make the GHCR package public if the account defaults to private packages.
 6. Confirm that the versioned image has both `linux/amd64` and `linux/arm64` manifests.
 7. Run `npx github:GladysAssistant/integration-store .` again after the image is public.

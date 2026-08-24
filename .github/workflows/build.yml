@@ -2,7 +2,7 @@ name: Build and publish image
 
 on:
   push:
-    tags: ["v*"]
+    tags: ["*.*.*"]
   workflow_dispatch:
     inputs:
       image-tag:
@@ -12,7 +12,7 @@ on:
   workflow_call:
     inputs:
       version:
-        description: Released version without the v prefix
+        description: Released version (for example 1.0.1)
         required: true
         type: string
 
@@ -26,7 +26,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.version != '' && format('v{0}', inputs.version) || '' }}
+          ref: ${{ inputs.version != '' && inputs.version || '' }}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -44,9 +44,12 @@ jobs:
           INPUT_VERSION: ${{ inputs.version }}
         run: |
           image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          release=true
           if [ -n "$INPUT_VERSION" ]; then
+            version="$INPUT_VERSION"
             tags="${image}:${INPUT_VERSION},${image}:latest"
           elif [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            release=false
             version="${INPUT_IMAGE_TAG:-${GITHUB_REF_NAME//\//-}}"
             if [ "$version" = "latest" ]; then
               echo "::error::Manual builds cannot move latest"
@@ -54,13 +57,34 @@ jobs:
             fi
             tags="${image}:${version}"
           else
-            version="${GITHUB_REF_NAME#v}"
+            version="$GITHUB_REF_NAME"
+            if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Release tags must use the X.Y.Z format (for example 1.0.1)"
+              exit 1
+            fi
             tags="${image}:${version},${image}:latest"
           fi
           echo "tags=$tags" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "release=$release" >> "$GITHUB_OUTPUT"
       - name: Read Gladys manifest
         id: manifest
         run: echo "json=$(jq -c . gladys-assistant-integration.json)" >> "$GITHUB_OUTPUT"
+      - name: Validate released versions
+        if: steps.meta.outputs.release == 'true'
+        env:
+          RELEASE_VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          expected_image="ghcr.io/${GITHUB_REPOSITORY,,}:${RELEASE_VERSION}"
+          package_version="$(jq -r .version package.json)"
+          manifest_version="$(jq -r .version gladys-assistant-integration.json)"
+          manifest_image="$(jq -r .docker_image gladys-assistant-integration.json)"
+          if [ "$package_version" != "$RELEASE_VERSION" ] || \
+             [ "$manifest_version" != "$RELEASE_VERSION" ] || \
+             [ "$manifest_image" != "$expected_image" ]; then
+            echo "::error::Tag, package version, manifest version and docker_image must all match ${RELEASE_VERSION}"
+            exit 1
+          fi
       - name: Build and push amd64 and arm64
         uses: docker/build-push-action@v6
         with:
