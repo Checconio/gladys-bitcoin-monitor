@@ -7,7 +7,17 @@ import {
   normalizeConfig,
 } from "../src/config.js";
 import { MEMPOOL_API_BASE_URL } from "../src/constants.js";
+import { SIMULATOR_FEATURES } from "../src/devices/simulator.js";
 import { BitcoinMonitorIntegration } from "../src/integration.js";
+
+function fakeGladys() {
+  return {
+    externalIds(type, platformId) {
+      const device = `ext:test:${type}:${platformId}`;
+      return { device, feature: (key) => `${device}:${key}` };
+    },
+  };
+}
 
 test("normalizes a complete valid configuration", () => {
   assert.deepEqual(
@@ -17,7 +27,6 @@ test("normalizes a complete valid configuration", () => {
       difficulty_poll_seconds: "300",
       hashrate_poll_seconds: "600",
       default_tx_vsize: "250",
-      default_transfer_btc: "0.05",
       default_priority: "economy",
     }),
     {
@@ -26,7 +35,6 @@ test("normalizes a complete valid configuration", () => {
       difficulty_poll_seconds: 300,
       hashrate_poll_seconds: 600,
       default_tx_vsize: 250,
-      default_transfer_btc: 0.05,
       default_priority: "economy",
     },
   );
@@ -49,7 +57,7 @@ test("ignores legacy API URL values because the endpoint is fixed", () => {
   assert.equal(integration.client.baseUrl, MEMPOOL_API_BASE_URL);
 });
 
-test("validates currency, intervals, vSize, amount and priority", () => {
+test("validates currency, intervals, integer vSize and priority", () => {
   assert.throws(() => normalizeConfig({ currency: "BTC" }), /currency/);
   assert.throws(
     () => normalizeConfig({ fast_poll_seconds: 29 }),
@@ -68,12 +76,45 @@ test("validates currency, intervals, vSize, amount and priority", () => {
     /default_tx_vsize/,
   );
   assert.throws(
-    () => normalizeConfig({ default_transfer_btc: 0 }),
-    /default_transfer_btc/,
+    () => normalizeConfig({ default_tx_vsize: 250.5 }),
+    /default_tx_vsize/,
   );
   assert.throws(
     () => normalizeConfig({ default_priority: "unknown" }),
     /default_priority/,
+  );
+});
+
+test("ignores the legacy configured transfer amount", () => {
+  const config = normalizeConfig({ default_transfer_btc: 0.05 });
+  assert.equal(Object.hasOwn(config, "default_transfer_btc"), false);
+});
+
+test("accepts a BTC transfer amount set directly by Gladys", async () => {
+  const gladys = fakeGladys();
+  const integration = new BitcoinMonitorIntegration({
+    gladys,
+    dataDirectory: ".",
+  });
+  let capturedState;
+  integration.updateSimulator = async (state) => {
+    capturedState = state;
+  };
+  const feature = {
+    external_id: gladys
+      .externalIds("bitcoin-monitor", "simulator")
+      .feature(SIMULATOR_FEATURES.AMOUNT),
+  };
+
+  await integration.onSetValue(null, feature, "0.02500000");
+  assert.deepEqual(capturedState, {
+    amountBtc: 0.025,
+    txVsize: 250,
+    priority: "fastest",
+  });
+  await assert.rejects(
+    integration.onSetValue(null, feature, "not-a-number"),
+    /Simulator amount/,
   );
 });
 

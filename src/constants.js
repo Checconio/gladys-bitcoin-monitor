@@ -28,6 +28,7 @@ export const PRIORITY_OPTIONS = Object.freeze([
 ]);
 
 export const SATOSHIS_PER_BITCOIN = 100_000_000;
+export const DEFAULT_TRANSFER_BTC = 0.01;
 export const VBYTES_PER_VIRTUAL_MEGABYTE = 1_000_000;
 export const HASHES_PER_EXAHASH = 1e18;
 export const DIFFICULTY_PER_TRILLION = 1e12;

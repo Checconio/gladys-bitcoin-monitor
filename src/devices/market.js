@@ -3,6 +3,10 @@ import {
   DEVICE_FEATURE_TYPES,
 } from "@gladysassistant/integration-sdk";
 import { getGladysCurrencyUnit } from "../config.js";
+import {
+  PUBLICATION_PRECISION,
+  roundForPublication,
+} from "../calculations/precision.js";
 import { DEVICE_KEYS, getDeviceIds } from "../constants.js";
 import { fiatFeatureName, numericFeature, stateEntries } from "./helpers.js";
 
@@ -34,7 +38,10 @@ export function getMarketStates(gladys, data, config) {
   const price = data.prices?.[config.currency];
   return Number.isFinite(price)
     ? stateEntries(gladys, DEVICE_KEYS.MARKET, [
-        { key: MARKET_FEATURES.PRICE, state: price },
+        {
+          key: MARKET_FEATURES.PRICE,
+          state: roundForPublication(price, PUBLICATION_PRECISION.FIAT_VALUE),
+        },
       ])
     : [];
 }

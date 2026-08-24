@@ -10,6 +10,10 @@ import {
   MILLISECONDS_PER_MINUTE,
   getDeviceIds,
 } from "../constants.js";
+import {
+  PUBLICATION_PRECISION,
+  roundForPublication,
+} from "../calculations/precision.js";
 import { numericFeature, stateEntries, textFeature } from "./helpers.js";
 
 export const NETWORK_FEATURES = Object.freeze({
@@ -149,7 +153,10 @@ export function getNetworkStates(gladys, data, nowMs = Date.now()) {
     entries.push(
       {
         key: NETWORK_FEATURES.BLOCK_AGE,
-        state: Math.max(0, (nowMs / 1000 - data.lastBlock.timestamp) / 60),
+        state: roundForPublication(
+          Math.max(0, (nowMs / 1000 - data.lastBlock.timestamp) / 60),
+          PUBLICATION_PRECISION.NETWORK_METRIC,
+        ),
       },
       {
         key: NETWORK_FEATURES.BLOCK_TX_COUNT,
@@ -163,11 +170,17 @@ export function getNetworkStates(gladys, data, nowMs = Date.now()) {
     entries.push(
       {
         key: NETWORK_FEATURES.DIFFICULTY_CHANGE,
-        state: data.difficulty.difficultyChange,
+        state: roundForPublication(
+          data.difficulty.difficultyChange,
+          PUBLICATION_PRECISION.PERCENT,
+        ),
       },
       {
         key: NETWORK_FEATURES.DIFFICULTY_PROGRESS,
-        state: data.difficulty.progressPercent,
+        state: roundForPublication(
+          data.difficulty.progressPercent,
+          PUBLICATION_PRECISION.PERCENT,
+        ),
       },
       {
         key: NETWORK_FEATURES.BLOCKS_UNTIL_ADJUSTMENT,
@@ -175,7 +188,10 @@ export function getNetworkStates(gladys, data, nowMs = Date.now()) {
       },
       {
         key: NETWORK_FEATURES.AVERAGE_BLOCK_TIME,
-        state: data.difficulty.averageBlockTimeMs / MILLISECONDS_PER_MINUTE,
+        state: roundForPublication(
+          data.difficulty.averageBlockTimeMs / MILLISECONDS_PER_MINUTE,
+          PUBLICATION_PRECISION.NETWORK_METRIC,
+        ),
       },
       {
         key: NETWORK_FEATURES.RETARGET_DATE,
@@ -187,11 +203,17 @@ export function getNetworkStates(gladys, data, nowMs = Date.now()) {
     entries.push(
       {
         key: NETWORK_FEATURES.HASHRATE,
-        state: data.hashrate.currentHashrate / HASHES_PER_EXAHASH,
+        state: roundForPublication(
+          data.hashrate.currentHashrate / HASHES_PER_EXAHASH,
+          PUBLICATION_PRECISION.NETWORK_METRIC,
+        ),
       },
       {
         key: NETWORK_FEATURES.DIFFICULTY,
-        state: data.hashrate.currentDifficulty / DIFFICULTY_PER_TRILLION,
+        state: roundForPublication(
+          data.hashrate.currentDifficulty / DIFFICULTY_PER_TRILLION,
+          PUBLICATION_PRECISION.NETWORK_METRIC,
+        ),
       },
     );
   }

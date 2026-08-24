@@ -22,7 +22,6 @@ Installez **Bitcoin Monitor** depuis le catalogue décentralisé des intégratio
 - **Actualisation difficulté** : de 300 à 3600 secondes (600 par défaut).
 - **Actualisation hashrate** : de 600 à 21600 secondes (1800 par défaut).
 - **Taille virtuelle par défaut** : de 50 à 10000 vB (250 par défaut).
-- **Montant par défaut** : de 0,00000001 à 21000000 BTC (0,01 par défaut).
 - **Priorité par défaut** : Rapide, 30 minutes, 1 heure ou Économique.
 
 Un changement de devise republie la découverte, car l'unité Gladys native ou le code ISO visible peut changer. Les appareils existants peuvent afficher un bouton **Mettre à jour** dans la découverte ; utilisez-le pour accepter cette évolution de structure.
@@ -31,7 +30,7 @@ Actions disponibles :
 
 - **Tester la connexion** valide les réponses des frais précis et de la hauteur, puis affiche un résultat traduit.
 - **Actualiser maintenant** lance immédiatement les trois familles de collecte.
-- **Modifier le simulateur de transaction** enregistre localement un montant, une taille virtuelle et une priorité.
+- **Modifier le simulateur de transaction** enregistre localement la taille virtuelle et la priorité. Le montant BTC se saisit directement depuis un tableau de bord Gladys.
 
 ## Appareils et métriques
 
@@ -103,7 +102,9 @@ fee_percent = fee_btc / montant_btc × 100 (seulement si le montant est > 0)
 
 Le montant transféré ne détermine **pas** les frais réseau. Une transaction de 0,01 BTC peut coûter autant qu'une transaction de 1 BTC si leur taille virtuelle et leur feerate sont identiques. La vSize dépend surtout du nombre et du type d'entrées et de sorties, pas de la valeur en BTC.
 
-Gladys 4.86 ne fournit pas de champ numérique générique modifiable pour une feature `sensor/decimal`. La déclarer modifiable continue de l'afficher comme un capteur. Le mécanisme officiel de repli est donc utilisé : l'action propose des champs validés de type `number` pour le montant et la vSize. La priorité emploie la feature modifiable officielle `text/select` et peut être changée directement. Les trois valeurs sont enregistrées atomiquement dans `/data/simulator-state.json`.
+Gladys ne fournit pas de champ numérique générique modifiable pour une feature `sensor/decimal`. Bitcoin Monitor associe donc **Transfer amount (BTC)** au contrat de consigne numérique pris en charge par Gladys, avec un pas de `0,00000001 BTC`. Le montant et la priorité se modifient directement depuis un tableau de bord ; la vSize reste dans le formulaire d'action validé. Les trois valeurs sont enregistrées atomiquement dans `/data/simulator-state.json`.
+
+Les valeurs sont arrondies avant publication : prix BTC et valeur du transfert à 2 décimales, frais fiat et pourcentages à 4, feerates à 3, valeurs BTC à 8, satoshis et vSize à l'entier. Gladys peut omettre un zéro final non significatif, mais aucun artefact de flottant JavaScript n'est publié.
 
 ## Polling, limites et pannes
 
@@ -120,7 +121,7 @@ En cas de panne temporaire, les dernières valeurs valides restent en mémoire ;
 - **Échec du test de connexion** : vérifiez le DNS et l'accès du pare-feu à `https://mempool.space`.
 - **HTTP 429 dans les logs** : augmentez l'intervalle d'actualisation rapide.
 - **Certaines métriques restent anciennes** : l'endpoint peut être temporairement indisponible ou invalide. Bitcoin Monitor conserve volontairement la dernière bonne valeur.
-- **Montant/vSize non modifiables sur la carte** : utilisez **Configuration → Modifier le simulateur de transaction** ; il s'agit de la limite Gladys décrite ci-dessus.
+- **Montant non modifiable après la mise à niveau** : mettez à jour l'appareil **Bitcoin Transaction Simulator** depuis la Découverte afin que Gladys reçoive la nouvelle définition modifiable. Utilisez **Configuration → Modifier le simulateur de transaction** uniquement pour la vSize.
 - **Avertissement de persistance** : vérifiez que Gladys a monté le dossier `/data` de l'intégration et qu'il appartient à l'UID/GID 1000.
 
 ## Confidentialité

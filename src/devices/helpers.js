@@ -11,6 +11,7 @@ export function numericFeature(
     category,
     type,
     unit,
+    step,
     min = 0,
     max = Number.MAX_SAFE_INTEGER,
     readOnly = true,
@@ -34,6 +35,7 @@ export function numericFeature(
     keep_history: keepHistory,
   };
   if (unit !== undefined) feature.unit = unit;
+  if (step !== undefined) feature.step = step;
   return feature;
 }
 

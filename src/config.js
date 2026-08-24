@@ -1,5 +1,5 @@
 import { DEVICE_FEATURE_UNITS } from "@gladysassistant/integration-sdk";
-import { PRIORITIES } from "./constants.js";
+import { DEFAULT_TRANSFER_BTC, PRIORITIES } from "./constants.js";
 
 export const SUPPORTED_CURRENCIES = Object.freeze([
   "EUR",
@@ -17,7 +17,6 @@ export const DEFAULT_CONFIG = Object.freeze({
   difficulty_poll_seconds: 600,
   hashrate_poll_seconds: 1800,
   default_tx_vsize: 250,
-  default_transfer_btc: 0.01,
   default_priority: PRIORITIES.FASTEST,
 });
 
@@ -29,6 +28,14 @@ function numberInRange(value, name, min, max) {
     throw new Error(
       `${name} must be a finite number between ${min} and ${max}`,
     );
+  }
+  return parsed;
+}
+
+function integerInRange(value, name, min, max) {
+  const parsed = numberInRange(value, name, min, max);
+  if (!Number.isInteger(parsed)) {
+    throw new Error(`${name} must be an integer`);
   }
   return parsed;
 }
@@ -72,17 +79,11 @@ export function normalizeConfig(raw = {}) {
       600,
       21600,
     ),
-    default_tx_vsize: numberInRange(
+    default_tx_vsize: integerInRange(
       raw.default_tx_vsize ?? DEFAULT_CONFIG.default_tx_vsize,
       "default_tx_vsize",
       50,
       10000,
-    ),
-    default_transfer_btc: numberInRange(
-      raw.default_transfer_btc ?? DEFAULT_CONFIG.default_transfer_btc,
-      "default_transfer_btc",
-      0.00000001,
-      21_000_000,
     ),
     default_priority: defaultPriority,
   };
@@ -103,7 +104,7 @@ export function getGladysCurrencyUnit(currency) {
 
 export function simulatorDefaults(config) {
   return {
-    amountBtc: config.default_transfer_btc,
+    amountBtc: DEFAULT_TRANSFER_BTC,
     txVsize: config.default_tx_vsize,
     priority: config.default_priority,
   };

@@ -4,6 +4,10 @@ import {
 } from "@gladysassistant/integration-sdk";
 import { calculateStorageOpportunity } from "../calculations/advice.js";
 import { calculateFastEconomySpread } from "../calculations/fees.js";
+import {
+  PUBLICATION_PRECISION,
+  roundForPublication,
+} from "../calculations/precision.js";
 import { DEVICE_KEYS, getDeviceIds } from "../constants.js";
 import { numericFeature, stateEntries, textFeature } from "./helpers.js";
 
@@ -25,8 +29,8 @@ export const FEES_FEATURES = Object.freeze({
 
 const feeFeature = (ids, key, name) =>
   numericFeature(ids, key, `${name} (sat/vB)`, {
-    category: DEVICE_FEATURE_CATEGORIES.CURRENCY,
-    type: DEVICE_FEATURE_TYPES.CURRENCY.DECIMAL,
+    category: DEVICE_FEATURE_CATEGORIES.DATARATE,
+    type: DEVICE_FEATURE_TYPES.DATARATE.RATE,
     max: 1_000_000,
   });
 
@@ -104,12 +108,48 @@ export function getFeesStates(gladys, data) {
     block2Median,
   );
   const entries = [
-    { key: FEES_FEATURES.FASTEST, state: data.fees.fastestFee },
-    { key: FEES_FEATURES.HALF_HOUR, state: data.fees.halfHourFee },
-    { key: FEES_FEATURES.HOUR, state: data.fees.hourFee },
-    { key: FEES_FEATURES.ECONOMY, state: data.fees.economyFee },
-    { key: FEES_FEATURES.MINIMUM, state: data.fees.minimumFee },
-    { key: FEES_FEATURES.SPREAD, state: calculateFastEconomySpread(data.fees) },
+    {
+      key: FEES_FEATURES.FASTEST,
+      state: roundForPublication(
+        data.fees.fastestFee,
+        PUBLICATION_PRECISION.FEE_RATE,
+      ),
+    },
+    {
+      key: FEES_FEATURES.HALF_HOUR,
+      state: roundForPublication(
+        data.fees.halfHourFee,
+        PUBLICATION_PRECISION.FEE_RATE,
+      ),
+    },
+    {
+      key: FEES_FEATURES.HOUR,
+      state: roundForPublication(
+        data.fees.hourFee,
+        PUBLICATION_PRECISION.FEE_RATE,
+      ),
+    },
+    {
+      key: FEES_FEATURES.ECONOMY,
+      state: roundForPublication(
+        data.fees.economyFee,
+        PUBLICATION_PRECISION.FEE_RATE,
+      ),
+    },
+    {
+      key: FEES_FEATURES.MINIMUM,
+      state: roundForPublication(
+        data.fees.minimumFee,
+        PUBLICATION_PRECISION.FEE_RATE,
+      ),
+    },
+    {
+      key: FEES_FEATURES.SPREAD,
+      state: roundForPublication(
+        calculateFastEconomySpread(data.fees),
+        PUBLICATION_PRECISION.FEE_RATE,
+      ),
+    },
     { key: FEES_FEATURES.OPPORTUNITY_SCORE, state: advice.score },
     { key: FEES_FEATURES.OPPORTUNITY_ADVICE, text: advice.text },
   ];
@@ -118,12 +158,23 @@ export function getFeesStates(gladys, data) {
     FEES_FEATURES.BLOCK_2_MEDIAN,
     FEES_FEATURES.BLOCK_3_MEDIAN,
   ].forEach((key, index) => {
-    if (blocks[index]) entries.push({ key, state: blocks[index].medianFee });
+    if (blocks[index]) {
+      entries.push({
+        key,
+        state: roundForPublication(
+          blocks[index].medianFee,
+          PUBLICATION_PRECISION.FEE_RATE,
+        ),
+      });
+    }
   });
   if (blocks[0]) {
     entries.push(
       { key: FEES_FEATURES.BLOCK_1_TX_COUNT, state: blocks[0].nTx },
-      { key: FEES_FEATURES.BLOCK_1_VSIZE, state: blocks[0].blockVSize },
+      {
+        key: FEES_FEATURES.BLOCK_1_VSIZE,
+        state: roundForPublication(blocks[0].blockVSize, 0),
+      },
     );
   }
   return stateEntries(gladys, DEVICE_KEYS.FEES, entries);

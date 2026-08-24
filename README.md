@@ -47,14 +47,13 @@ After the first public release is indexed:
 | `difficulty_poll_seconds` |       600 | 300–3600 seconds                  |
 | `hashrate_poll_seconds`   |      1800 | 600–21600 seconds                 |
 | `default_tx_vsize`        |       250 | 50–10000 vB                       |
-| `default_transfer_btc`    |      0.01 | 0.00000001–21000000 BTC           |
 | `default_priority`        | `fastest` | fastest, half_hour, hour, economy |
 
 The Configuration screen also exposes **Test connection**, **Refresh now**, and **Update transaction simulator** actions.
 
-### Gladys numeric-input limitation
+### Simulator input in Gladys
 
-Gladys 4.86 does not render a generic numeric input for a writable `sensor/decimal` device feature. Marking such a feature writable would display it as a sensor and would not let the user enter a value. Bitcoin Monitor therefore follows the official fallback contract: **Transfer amount** and **Transaction vSize** are state features edited through the `update_simulator` action's `number` fields. **Priority** is directly editable through the supported `text/select` feature contract.
+Gladys does not render a generic writable `sensor/decimal` feature as a numeric input. Bitcoin Monitor maps **Transfer amount (BTC)** to Gladys' supported numeric setpoint contract, with a `0.00000001 BTC` step, so it can be entered directly from a Gladys dashboard. **Priority** is also directly editable. **Transaction vSize** remains available through the **Update transaction simulator** action.
 
 ## Simulator semantics
 
@@ -67,6 +66,19 @@ fee_fiat = fee_btc × public_BTC_price
 ```
 
 The local BTC amount is used only to calculate the transfer's fiat value and the percentage represented by the fee. It is persisted in `/data/simulator-state.json` and is never sent to mempool.space.
+
+Published numeric values are rounded before they are sent to Gladys, preventing JavaScript floating-point artifacts:
+
+| Value                          | Precision  |
+| ------------------------------ | ---------- |
+| BTC price and transfer value   | 2 decimals |
+| Fiat fees                      | 4 decimals |
+| Feerates                       | 3 decimals |
+| Percentages                    | 4 decimals |
+| BTC values                     | 8 decimals |
+| Satoshis and transaction vSize | Integer    |
+
+Gladys stores these as numbers, so an insignificant trailing zero may be omitted (for example `0.034` instead of `0.0340`), but binary floating-point tails are never published.
 
 ## Data sources
 

@@ -3,7 +3,10 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { SimulatorStateStore } from "../src/services/simulatorState.js";
+import {
+  normalizeSimulatorState,
+  SimulatorStateStore,
+} from "../src/services/simulatorState.js";
 
 const defaults = { amountBtc: 0.01, txVsize: 250, priority: "fastest" };
 
@@ -44,4 +47,15 @@ test("reports a persistence failure instead of claiming a saved state", async (t
   await writeFile(blockedPath, "file", "utf8");
   const store = new SimulatorStateStore({ directory: blockedPath });
   await assert.rejects(store.save(defaults));
+});
+
+test("rejects a fractional transaction vSize", () => {
+  assert.throws(
+    () =>
+      normalizeSimulatorState(
+        { amountBtc: 0.01, txVsize: 250.5, priority: "fastest" },
+        defaults,
+      ),
+    /vSize must be an integer/,
+  );
 });

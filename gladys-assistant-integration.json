@@ -123,8 +123,8 @@
         "fr": "Valeurs par défaut du simulateur"
       },
       "description": {
-        "en": "Transaction fees depend on virtual size and feerate, not on the transferred BTC amount. Use the action below for interactive changes.",
-        "fr": "Les frais dépendent de la taille virtuelle et du feerate, pas du montant en BTC transféré. Utilisez l'action ci-dessous pour les modifications interactives."
+        "en": "Transaction fees depend on virtual size and feerate, not on the transferred BTC amount. Enter the BTC amount on a Gladys dashboard; use the action below for vSize and priority.",
+        "fr": "Les frais dépendent de la taille virtuelle et du feerate, pas du montant en BTC transféré. Saisissez le montant BTC sur un tableau de bord Gladys ; utilisez l'action ci-dessous pour la vSize et la priorité."
       }
     },
     {
@@ -138,18 +138,6 @@
       "default": 250,
       "min": 50,
       "max": 10000
-    },
-    {
-      "key": "default_transfer_btc",
-      "type": "number",
-      "label": {
-        "en": "Default transfer amount (BTC)",
-        "fr": "Montant de transfert par défaut (BTC)"
-      },
-      "required": true,
-      "default": 0.01,
-      "min": 0.00000001,
-      "max": 21000000
     },
     {
       "key": "default_priority",
@@ -194,23 +182,11 @@
         "fr": "Modifier le simulateur de transaction"
       },
       "description": {
-        "en": "Set the local BTC amount, transaction vSize and priority.",
-        "fr": "Définit localement le montant BTC, la taille virtuelle et la priorité."
+        "en": "Set the transaction vSize and priority. The BTC amount is edited directly from the Gladys dashboard.",
+        "fr": "Définit la taille virtuelle et la priorité. Le montant BTC se modifie directement depuis le dashboard Gladys."
       },
       "timeout_seconds": 30,
       "fields": [
-        {
-          "key": "amount_btc",
-          "type": "number",
-          "label": {
-            "en": "Transfer amount (BTC)",
-            "fr": "Montant transféré (BTC)"
-          },
-          "required": true,
-          "default": 0.01,
-          "min": 0,
-          "max": 21000000
-        },
         {
           "key": "tx_vsize",
           "type": "number",

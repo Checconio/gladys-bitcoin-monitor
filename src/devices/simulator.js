@@ -5,6 +5,10 @@ import {
 } from "@gladysassistant/integration-sdk";
 import { getGladysCurrencyUnit } from "../config.js";
 import {
+  PUBLICATION_PRECISION,
+  roundForPublication,
+} from "../calculations/precision.js";
+import {
   simulatePriorities,
   formatSimulationSummary,
 } from "../calculations/simulator.js";
@@ -52,12 +56,13 @@ export function buildSimulatorDevice(gladys, config) {
     name: "Bitcoin Transaction Simulator",
     external_id: ids.device,
     features: [
-      // Gladys 4.86 has no generic numeric input widget for sensor/decimal.
-      // These values are edited through the official update_simulator action.
-      numericFeature(ids, SIMULATOR_FEATURES.AMOUNT, "Transfer amount", {
-        category: DEVICE_FEATURE_CATEGORIES.CURRENCY,
-        type: DEVICE_FEATURE_TYPES.CURRENCY.DECIMAL,
+      // Gladys routes writable numeric setpoints to its dashboard number input.
+      numericFeature(ids, SIMULATOR_FEATURES.AMOUNT, "Transfer amount (BTC)", {
+        category: DEVICE_FEATURE_CATEGORIES.SWITCH,
+        type: DEVICE_FEATURE_TYPES.SWITCH.TARGET_CURRENT,
         unit: DEVICE_FEATURE_UNITS.BITCOIN,
+        step: 0.00000001,
+        readOnly: false,
         max: 21_000_000,
       }),
       numericFeature(ids, SIMULATOR_FEATURES.VSIZE, "Transaction vSize (vB)", {
@@ -76,8 +81,8 @@ export function buildSimulatorDevice(gladys, config) {
         SIMULATOR_FEATURES.SELECTED_RATE,
         "Selected fee rate (sat/vB)",
         {
-          category: DEVICE_FEATURE_CATEGORIES.CURRENCY,
-          type: DEVICE_FEATURE_TYPES.CURRENCY.DECIMAL,
+          category: DEVICE_FEATURE_CATEGORIES.DATARATE,
+          type: DEVICE_FEATURE_TYPES.DATARATE.RATE,
           max: 1_000_000,
         },
       ),
@@ -86,8 +91,8 @@ export function buildSimulatorDevice(gladys, config) {
         SIMULATOR_FEATURES.SELECTED_SATS,
         "Selected fee (sats)",
         {
-          category: DEVICE_FEATURE_CATEGORIES.CURRENCY,
-          type: DEVICE_FEATURE_TYPES.CURRENCY.DECIMAL,
+          category: DEVICE_FEATURE_CATEGORIES.COUNTER_SENSOR,
+          type: DEVICE_FEATURE_TYPES.SENSOR.INTEGER,
         },
       ),
       numericFeature(ids, SIMULATOR_FEATURES.SELECTED_BTC, "Selected fee", {
@@ -119,7 +124,13 @@ export function buildSimulatorDevice(gladys, config) {
 
 export function getSimulatorStates(gladys, data, config, simulatorState) {
   const entries = [
-    { key: SIMULATOR_FEATURES.AMOUNT, state: simulatorState.amountBtc },
+    {
+      key: SIMULATOR_FEATURES.AMOUNT,
+      state: roundForPublication(
+        simulatorState.amountBtc,
+        PUBLICATION_PRECISION.BITCOIN,
+      ),
+    },
     { key: SIMULATOR_FEATURES.VSIZE, state: simulatorState.txVsize },
     { key: SIMULATOR_FEATURES.PRIORITY, text: simulatorState.priority },
   ];
@@ -138,31 +149,67 @@ export function getSimulatorStates(gladys, data, config, simulatorState) {
   entries.push(
     {
       key: SIMULATOR_FEATURES.TRANSFER_FIAT,
-      state: selected.transferValueFiat,
+      state: roundForPublication(
+        selected.transferValueFiat,
+        PUBLICATION_PRECISION.FIAT_VALUE,
+      ),
     },
-    { key: SIMULATOR_FEATURES.SELECTED_RATE, state: selected.feeRate },
+    {
+      key: SIMULATOR_FEATURES.SELECTED_RATE,
+      state: roundForPublication(
+        selected.feeRate,
+        PUBLICATION_PRECISION.FEE_RATE,
+      ),
+    },
     { key: SIMULATOR_FEATURES.SELECTED_SATS, state: selected.feeSats },
-    { key: SIMULATOR_FEATURES.SELECTED_BTC, state: selected.feeBtc },
-    { key: SIMULATOR_FEATURES.SELECTED_FIAT, state: selected.feeFiat },
+    {
+      key: SIMULATOR_FEATURES.SELECTED_BTC,
+      state: roundForPublication(
+        selected.feeBtc,
+        PUBLICATION_PRECISION.BITCOIN,
+      ),
+    },
+    {
+      key: SIMULATOR_FEATURES.SELECTED_FIAT,
+      state: roundForPublication(
+        selected.feeFiat,
+        PUBLICATION_PRECISION.FIAT_FEE,
+      ),
+    },
     {
       key: SIMULATOR_FEATURES.SELECTED_PERCENT,
-      state: selected.feePercent ?? 0,
+      state: roundForPublication(
+        selected.feePercent ?? 0,
+        PUBLICATION_PRECISION.PERCENT,
+      ),
     },
     {
       key: SIMULATOR_FEATURES.FASTEST_FIAT,
-      state: simulation.priorities[PRIORITIES.FASTEST].feeFiat,
+      state: roundForPublication(
+        simulation.priorities[PRIORITIES.FASTEST].feeFiat,
+        PUBLICATION_PRECISION.FIAT_FEE,
+      ),
     },
     {
       key: SIMULATOR_FEATURES.HALF_HOUR_FIAT,
-      state: simulation.priorities[PRIORITIES.HALF_HOUR].feeFiat,
+      state: roundForPublication(
+        simulation.priorities[PRIORITIES.HALF_HOUR].feeFiat,
+        PUBLICATION_PRECISION.FIAT_FEE,
+      ),
     },
     {
       key: SIMULATOR_FEATURES.HOUR_FIAT,
-      state: simulation.priorities[PRIORITIES.HOUR].feeFiat,
+      state: roundForPublication(
+        simulation.priorities[PRIORITIES.HOUR].feeFiat,
+        PUBLICATION_PRECISION.FIAT_FEE,
+      ),
     },
     {
       key: SIMULATOR_FEATURES.ECONOMY_FIAT,
-      state: simulation.priorities[PRIORITIES.ECONOMY].feeFiat,
+      state: roundForPublication(
+        simulation.priorities[PRIORITIES.ECONOMY].feeFiat,
+        PUBLICATION_PRECISION.FIAT_FEE,
+      ),
     },
     {
       key: SIMULATOR_FEATURES.SUMMARY,

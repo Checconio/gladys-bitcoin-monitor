@@ -107,7 +107,7 @@ export class BitcoinMonitorIntegration {
       try {
         const nextState = normalizeSimulatorState(
           {
-            amountBtc: fields.amount_btc,
+            amountBtc: this.simulatorState.amountBtc,
             txVsize: fields.tx_vsize,
             priority: fields.priority,
           },
@@ -115,8 +115,8 @@ export class BitcoinMonitorIntegration {
         );
         await this.updateSimulator(nextState);
         return {
-          en: `Simulator updated: ${nextState.amountBtc} BTC, ${nextState.txVsize} vB, ${nextState.priority}.`,
-          fr: `Simulateur mis à jour : ${nextState.amountBtc} BTC, ${nextState.txVsize} vB, ${nextState.priority}.`,
+          en: `Simulator settings updated: ${nextState.txVsize} vB, ${nextState.priority}.`,
+          fr: `Réglages du simulateur mis à jour : ${nextState.txVsize} vB, ${nextState.priority}.`,
         };
       } catch (error) {
         throw friendlyActionError(error);
@@ -192,10 +192,22 @@ export class BitcoinMonitorIntegration {
   }
 
   async onSetValue(_device, feature, value) {
+    const amountExternalId = getDeviceIds(
+      this.gladys,
+      DEVICE_KEYS.SIMULATOR,
+    ).feature(SIMULATOR_FEATURES.AMOUNT);
     const priorityExternalId = getDeviceIds(
       this.gladys,
       DEVICE_KEYS.SIMULATOR,
     ).feature(SIMULATOR_FEATURES.PRIORITY);
+    if (feature.external_id === amountExternalId) {
+      const nextState = normalizeSimulatorState(
+        { ...this.simulatorState, amountBtc: Number(value) },
+        this.simulatorState,
+      );
+      await this.updateSimulator(nextState);
+      return;
+    }
     if (
       feature.external_id !== priorityExternalId ||
       !Object.values(PRIORITIES).includes(value)
@@ -243,9 +255,6 @@ export class BitcoinMonitorIntegration {
     this.collector.setConfig(next);
 
     const simulatorPatch = { ...this.simulatorState };
-    if (next.default_transfer_btc !== previous.default_transfer_btc) {
-      simulatorPatch.amountBtc = next.default_transfer_btc;
-    }
     if (next.default_tx_vsize !== previous.default_tx_vsize) {
       simulatorPatch.txVsize = next.default_tx_vsize;
     }

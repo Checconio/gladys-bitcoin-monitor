@@ -6,6 +6,10 @@ import {
   aggregateFeeHistogram,
   vsizeToVirtualMegabytes,
 } from "../calculations/mempool.js";
+import {
+  PUBLICATION_PRECISION,
+  roundForPublication,
+} from "../calculations/precision.js";
 import { DEVICE_KEYS, getDeviceIds } from "../constants.js";
 import { numericFeature, stateEntries } from "./helpers.js";
 
@@ -41,8 +45,8 @@ export function buildMempoolDevice(gladys) {
         MEMPOOL_FEATURES.TOTAL_FEES,
         "Total mempool fees (sats)",
         {
-          category: DEVICE_FEATURE_CATEGORIES.CURRENCY,
-          type: DEVICE_FEATURE_TYPES.CURRENCY.DECIMAL,
+          category: DEVICE_FEATURE_CATEGORIES.COUNTER_SENSOR,
+          type: DEVICE_FEATURE_TYPES.SENSOR.INTEGER,
         },
       ),
       backlog(MEMPOOL_FEATURES.GE_1, "Backlog >= 1 sat/vB"),
@@ -60,12 +64,42 @@ export function getMempoolStates(gladys, data) {
     { key: MEMPOOL_FEATURES.COUNT, state: data.mempool.count },
     {
       key: MEMPOOL_FEATURES.BACKLOG,
-      state: vsizeToVirtualMegabytes(data.mempool.vsize),
+      state: roundForPublication(
+        vsizeToVirtualMegabytes(data.mempool.vsize),
+        PUBLICATION_PRECISION.VIRTUAL_MEGABYTES,
+      ),
     },
-    { key: MEMPOOL_FEATURES.TOTAL_FEES, state: data.mempool.totalFee },
-    { key: MEMPOOL_FEATURES.GE_1, state: pressure[1] },
-    { key: MEMPOOL_FEATURES.GE_2, state: pressure[2] },
-    { key: MEMPOOL_FEATURES.GE_5, state: pressure[5] },
-    { key: MEMPOOL_FEATURES.GE_10, state: pressure[10] },
+    {
+      key: MEMPOOL_FEATURES.TOTAL_FEES,
+      state: Math.round(data.mempool.totalFee),
+    },
+    {
+      key: MEMPOOL_FEATURES.GE_1,
+      state: roundForPublication(
+        pressure[1],
+        PUBLICATION_PRECISION.VIRTUAL_MEGABYTES,
+      ),
+    },
+    {
+      key: MEMPOOL_FEATURES.GE_2,
+      state: roundForPublication(
+        pressure[2],
+        PUBLICATION_PRECISION.VIRTUAL_MEGABYTES,
+      ),
+    },
+    {
+      key: MEMPOOL_FEATURES.GE_5,
+      state: roundForPublication(
+        pressure[5],
+        PUBLICATION_PRECISION.VIRTUAL_MEGABYTES,
+      ),
+    },
+    {
+      key: MEMPOOL_FEATURES.GE_10,
+      state: roundForPublication(
+        pressure[10],
+        PUBLICATION_PRECISION.VIRTUAL_MEGABYTES,
+      ),
+    },
   ]);
 }

@@ -1,5 +1,6 @@
 import { PRIORITIES } from "../constants.js";
 import { calculateNetworkFee } from "./fees.js";
+import { PUBLICATION_PRECISION } from "./precision.js";
 
 const PRIORITY_TO_FEE_FIELD = Object.freeze({
   [PRIORITIES.FASTEST]: "fastestFee",
@@ -76,6 +77,8 @@ export function simulatePriorities({
 export function formatSimulationSummary({ state, simulation, currency }) {
   const selected = simulation.selected;
   const percent =
-    selected.feePercent === null ? "n/a" : `${selected.feePercent.toFixed(4)}%`;
-  return `${state.amountBtc} BTC (~${selected.transferValueFiat.toFixed(2)} ${currency})\n${selected.feeRate} sat/vB · ${selected.feeSats} sats\nEstimated network fee: ${selected.feeFiat.toFixed(2)} ${currency} · ${percent} of transfer`;
+    selected.feePercent === null
+      ? "n/a"
+      : `${selected.feePercent.toFixed(PUBLICATION_PRECISION.PERCENT)}%`;
+  return `${state.amountBtc.toFixed(PUBLICATION_PRECISION.BITCOIN)} BTC (~${selected.transferValueFiat.toFixed(PUBLICATION_PRECISION.FIAT_VALUE)} ${currency})\n${selected.feeRate.toFixed(PUBLICATION_PRECISION.FEE_RATE)} sat/vB · ${selected.feeSats} sats\nEstimated network fee: ${selected.feeFiat.toFixed(PUBLICATION_PRECISION.FIAT_FEE)} ${currency} · ${percent} of transfer`;
 }

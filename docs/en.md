@@ -22,7 +22,6 @@ Install **Bitcoin Monitor** from the decentralized integration catalog. Open its
 - **Difficulty refresh**: 300 to 3600 seconds (default 600).
 - **Hashrate refresh**: 600 to 21600 seconds (default 1800).
 - **Default transaction vSize**: 50 to 10000 vB (default 250).
-- **Default transfer amount**: 0.00000001 to 21000000 BTC (default 0.01).
 - **Default priority**: Fastest, 30 minutes, 1 hour, or Economy.
 
 Changing the currency republishes discovery because a native Gladys currency unit or the visible ISO code can change. Existing devices may show an **Update** action in Discovery; use it to accept the feature-structure change.
@@ -31,7 +30,7 @@ Available actions:
 
 - **Test connection** validates the precise-fee and tip-height responses and displays a translated result.
 - **Refresh now** runs all three collection families immediately.
-- **Update transaction simulator** saves an amount, vSize, and priority locally.
+- **Update transaction simulator** saves the vSize and priority locally. The BTC amount is entered directly from a Gladys dashboard.
 
 ## Devices and metrics
 
@@ -103,7 +102,9 @@ fee_percent = fee_btc / transfer_amount_btc × 100 (only when amount > 0)
 
 The amount transferred does **not** determine the network fee. A transaction carrying 0.01 BTC can cost the same fee as one carrying 1 BTC when their virtual size and feerate are identical. vSize depends mostly on the number and type of inputs and outputs, not the BTC value.
 
-Gladys 4.86 does not provide a generic writable numeric widget for a `sensor/decimal` feature. Declaring one writable still renders it as a sensor. The official action form is therefore used for amount and vSize, with validated `number` fields. Priority uses the supported writable `text/select` device feature and can be changed directly. The three values are atomically persisted in `/data/simulator-state.json`.
+Gladys does not provide a generic writable numeric widget for a `sensor/decimal` feature. Bitcoin Monitor therefore maps **Transfer amount (BTC)** to Gladys' supported numeric setpoint contract, with a `0.00000001 BTC` step. The amount and priority can be changed directly from a dashboard; vSize remains in the validated action form. The three values are atomically persisted in `/data/simulator-state.json`.
+
+Values are rounded before publication: BTC prices and transfer values to 2 decimals, fiat fees and percentages to 4, feerates to 3, BTC amounts to 8, and satoshis/vSize to integers. Gladys may omit an insignificant trailing zero, but JavaScript floating-point tails are never exposed.
 
 ## Polling, rate limits, and failures
 
@@ -120,7 +121,7 @@ On temporary failure, the last valid in-memory values remain intact; zero or nul
 - **Connection test fails**: verify DNS/firewall access to `https://mempool.space`.
 - **HTTP 429 in logs**: increase the fast refresh interval.
 - **Some metrics stay old**: the endpoint may be temporarily unavailable or malformed. Bitcoin Monitor deliberately keeps the last valid value.
-- **Simulator amount/vSize are not directly editable on the device card**: use **Configuration → Update transaction simulator**; this is the current Gladys numeric-input limitation described above.
+- **Transfer amount is not editable after upgrading**: update the **Bitcoin Transaction Simulator** device from Discovery so Gladys receives the new writable feature definition. Use **Configuration → Update transaction simulator** only for vSize.
 - **Persistence warning**: verify that Gladys mounted the integration's writable `/data` directory and that it is owned by UID/GID 1000.
 
 ## Privacy

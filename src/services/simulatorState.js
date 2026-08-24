@@ -11,8 +11,10 @@ export function normalizeSimulatorState(raw, defaults) {
   if (!Number.isFinite(amountBtc) || amountBtc < 0 || amountBtc > 21_000_000) {
     throw new Error("Simulator amount must be between 0 and 21000000 BTC");
   }
-  if (!Number.isFinite(txVsize) || txVsize < 50 || txVsize > 10_000) {
-    throw new Error("Simulator vSize must be between 50 and 10000 vB");
+  if (!Number.isInteger(txVsize) || txVsize < 50 || txVsize > 10_000) {
+    throw new Error(
+      "Simulator vSize must be an integer between 50 and 10000 vB",
+    );
   }
   if (!PRIORITY_VALUES.has(priority)) {
     throw new Error(
