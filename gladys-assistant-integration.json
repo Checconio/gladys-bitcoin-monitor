@@ -8,7 +8,7 @@
   },
   "version": "1.0.4",
   "docker_image": "ghcr.io/checconio/gladys-bitcoin-monitor:1.0.4",
-  "gladys_version": ">=4.86.0",
+  "gladys_version": ">=5.1.0",
   "cover_image": "https://raw.githubusercontent.com/Checconio/gladys-bitcoin-monitor/main/cover.png",
   "categories": ["network", "services"],
   "config_schema": [
@@ -292,6 +292,291 @@
               "label": {
                 "en": "Economy",
                 "fr": "Économique"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "transports": ["cloud"],
+  "widgets": [
+    {
+      "key": "fees",
+      "label": {
+        "en": "Bitcoin — Fees & opportunity",
+        "fr": "Bitcoin — Frais & opportunité"
+      },
+      "icon": "activity",
+      "settings": [
+        {
+          "key": "view",
+          "type": "select",
+          "label": {
+            "en": "View",
+            "fr": "Vue"
+          },
+          "required": true,
+          "default": "opportunity",
+          "options": [
+            {
+              "value": "opportunity",
+              "label": {
+                "en": "Transfer opportunity",
+                "fr": "Opportunité de transfert"
+              }
+            },
+            {
+              "value": "current",
+              "label": {
+                "en": "Current fees",
+                "fr": "Situation actuelle"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "simulator",
+      "label": {
+        "en": "Bitcoin — Transaction simulator",
+        "fr": "Bitcoin — Simulateur de transaction"
+      },
+      "icon": "dollar-sign",
+      "settings": [
+        {
+          "key": "view",
+          "type": "select",
+          "label": {
+            "en": "View",
+            "fr": "Vue"
+          },
+          "required": true,
+          "default": "simulation",
+          "options": [
+            {
+              "value": "simulation",
+              "label": {
+                "en": "Transfer simulation",
+                "fr": "Simulation de transfert"
+              }
+            },
+            {
+              "value": "comparison",
+              "label": {
+                "en": "Current comparison",
+                "fr": "Comparatif actuel"
+              }
+            }
+          ]
+        },
+        {
+          "key": "inputs",
+          "type": "section",
+          "label": {
+            "en": "Shared simulator",
+            "fr": "Simulateur partagé"
+          },
+          "description": {
+            "en": "These inputs are applied only when you press Apply widget settings. They update the shared simulator, never send a Bitcoin transaction.",
+            "fr": "Ces entrées sont appliquées uniquement avec le bouton Appliquer les réglages. Elles modifient le simulateur partagé, sans envoyer de transaction Bitcoin."
+          }
+        },
+        {
+          "key": "amount_btc",
+          "type": "number",
+          "label": {
+            "en": "Amount (BTC)",
+            "fr": "Montant (BTC)"
+          },
+          "required": true,
+          "default": 0.01,
+          "min": 0,
+          "max": 21000000
+        },
+        {
+          "key": "tx_vsize",
+          "type": "number",
+          "label": {
+            "en": "Transaction vSize (vB)",
+            "fr": "Taille virtuelle (vB)"
+          },
+          "required": true,
+          "default": 250,
+          "min": 50,
+          "max": 10000
+        },
+        {
+          "key": "priority",
+          "type": "select",
+          "label": {
+            "en": "Priority",
+            "fr": "Priorité"
+          },
+          "required": true,
+          "default": "fastest",
+          "options": [
+            {
+              "value": "fastest",
+              "label": {
+                "en": "Fastest",
+                "fr": "Rapide"
+              }
+            },
+            {
+              "value": "half_hour",
+              "label": {
+                "en": "30 minutes",
+                "fr": "30 minutes"
+              }
+            },
+            {
+              "value": "hour",
+              "label": {
+                "en": "1 hour",
+                "fr": "1 heure"
+              }
+            },
+            {
+              "value": "economy",
+              "label": {
+                "en": "Economy",
+                "fr": "Économique"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "network",
+      "label": {
+        "en": "Bitcoin — Network status",
+        "fr": "Bitcoin — État du réseau"
+      },
+      "icon": "globe"
+    },
+    {
+      "key": "mining",
+      "label": {
+        "en": "Bitcoin — Mining & difficulty",
+        "fr": "Bitcoin — Minage & difficulté"
+      },
+      "icon": "cpu"
+    },
+    {
+      "key": "history",
+      "label": {
+        "en": "Bitcoin — History chart",
+        "fr": "Bitcoin — Graphique historique"
+      },
+      "icon": "bar-chart-2",
+      "settings": [
+        {
+          "key": "metric",
+          "type": "select",
+          "label": {
+            "en": "Chart",
+            "fr": "Graphique"
+          },
+          "required": true,
+          "default": "fees",
+          "options": [
+            {
+              "value": "fees",
+              "label": {
+                "en": "Bitcoin fees (sat/vB)",
+                "fr": "Frais Bitcoin (sat/vB)"
+              }
+            },
+            {
+              "value": "projected",
+              "label": {
+                "en": "Projected blocks (sat/vB)",
+                "fr": "Blocs projetés (sat/vB)"
+              }
+            },
+            {
+              "value": "cost",
+              "label": {
+                "en": "Transaction cost",
+                "fr": "Coût transaction"
+              }
+            },
+            {
+              "value": "price",
+              "label": {
+                "en": "Bitcoin price",
+                "fr": "Prix Bitcoin"
+              }
+            },
+            {
+              "value": "pressure",
+              "label": {
+                "en": "Fee pressure (vMB)",
+                "fr": "Pression sur les frais (vMB)"
+              }
+            },
+            {
+              "value": "blocks",
+              "label": {
+                "en": "Block timing (min)",
+                "fr": "Rythme des blocs (min)"
+              }
+            }
+          ]
+        },
+        {
+          "key": "interval",
+          "type": "select",
+          "label": {
+            "en": "Period",
+            "fr": "Période"
+          },
+          "required": true,
+          "default": "auto",
+          "options": [
+            {
+              "value": "auto",
+              "label": {
+                "en": "Default for this chart",
+                "fr": "Par défaut pour ce graphique"
+              }
+            },
+            {
+              "value": "last-hour",
+              "label": {
+                "en": "Last hour",
+                "fr": "Dernière heure"
+              }
+            },
+            {
+              "value": "last-twelve-hours",
+              "label": {
+                "en": "Last 12 hours",
+                "fr": "Dernières 12 h"
+              }
+            },
+            {
+              "value": "last-day",
+              "label": {
+                "en": "Last 24 hours",
+                "fr": "Dernières 24 h"
+              }
+            },
+            {
+              "value": "last-week",
+              "label": {
+                "en": "Last 7 days",
+                "fr": "Derniers 7 jours"
+              }
+            },
+            {
+              "value": "last-month",
+              "label": {
+                "en": "Last month",
+                "fr": "Dernier mois"
               }
             }
           ]

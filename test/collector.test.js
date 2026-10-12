@@ -45,9 +45,10 @@ function healthyClient() {
   };
 }
 
-function collectorWith({ client = healthyClient(), registry } = {}) {
+function collectorWith({ client = healthyClient(), registry, now } = {}) {
   const statuses = [];
   const batches = [];
+  const transports = [];
   const gladys = {
     externalIds,
     async setConnectionStatus(...args) {
@@ -56,15 +57,19 @@ function collectorWith({ client = healthyClient(), registry } = {}) {
     async publishStates(states) {
       batches.push(states);
     },
+    async publishTransports(entries) {
+      transports.push(entries);
+    },
   };
   const collector = new Collector({
     gladys,
     client,
-    registry: registry ?? { hasFeature: () => false },
+    registry: { hasDevice: () => false, hasFeature: () => false, ...registry },
+    now,
     config: normalizeConfig(),
     simulatorState: { amountBtc: 0.01, txVsize: 250, priority: "fastest" },
   });
-  return { collector, statuses, batches };
+  return { collector, statuses, batches, transports };
 }
 
 test("keeps the last valid data and marks the API unavailable after three failed fast cycles", async () => {
@@ -87,6 +92,104 @@ test("keeps the last valid data and marks the API unavailable after three failed
   assert.equal(collector.data.fees, lastFees);
   assert.equal(statuses[0][0], true);
   assert.equal(statuses.at(-1)[0], false);
+});
+
+test("transport follows per-device failures and recovery, and clears degraded status", async () => {
+  const client = healthyClient();
+  const getFees = client.getPreciseFees;
+  const getBlocks = client.getMempoolBlocks;
+  const { collector, transports } = collectorWith({
+    client,
+    registry: {
+      hasDevice: (id) => id === "device:fees",
+    },
+  });
+  await collector.collectFast();
+  assert.deepEqual(transports.at(-1), [
+    { external_id: "device:fees", transport: "cloud" },
+  ]);
+  await collector.collectFast();
+  assert.equal(transports.length, 1);
+  client.getMempoolBlocks = async () => {
+    throw new Error("offline");
+  };
+  await collector.collectFast();
+  assert.equal(transports.at(-1)[0].degraded, true);
+  assert.ok(transports.at(-1)[0].message.fr);
+  client.getPreciseFees = async () => {
+    throw new Error("offline");
+  };
+  await collector.collectFast();
+  assert.equal(transports.at(-1)[0].transport, "unreachable");
+  client.getPreciseFees = getFees;
+  client.getMempoolBlocks = getBlocks;
+  await collector.collectFast();
+  assert.deepEqual(transports.at(-1), [
+    { external_id: "device:fees", transport: "cloud" },
+  ]);
+  collector.resetPublishedCache();
+  await collector.publishTransports();
+  assert.equal(transports.length, 5);
+});
+
+test("unchanged healthy measurements refresh history; failed sources do not get new timestamps", async () => {
+  let time = 1_000_000;
+  const client = healthyClient();
+  const { collector, batches } = collectorWith({
+    client,
+    now: () => time,
+    registry: {
+      hasFeature: (id) => id === "device:fees:economy-fee",
+    },
+  });
+  await collector.collectFast();
+  time += 60_000;
+  await collector.collectFast();
+  assert.equal(batches.length, 1);
+  time += 300_000;
+  await collector.collectFast();
+  assert.equal(batches.length, 2);
+  const lastFees = collector.data.fees;
+  client.getPreciseFees = async () => {
+    throw new Error("offline");
+  };
+  time += 300_000;
+  await collector.collectFast({ force: true });
+  assert.equal(batches.length, 2);
+  assert.equal(collector.data.fees, lastFees);
+});
+
+test("transport publish failures are retried without blocking state publication", async () => {
+  const { collector, batches, transports } = collectorWith({
+    registry: {
+      hasDevice: () => true,
+      hasFeature: () => true,
+    },
+  });
+  const publish = collector.gladys.publishTransports;
+  collector.gladys.publishTransports = async () => {
+    throw new Error("host unavailable");
+  };
+  await collector.collectFast();
+  assert.ok(batches.length > 0);
+  assert.equal(collector.lastTransports.size, 0);
+  collector.gladys.publishTransports = publish;
+  await collector.publishTransports();
+  assert.equal(transports[0].length, 5);
+});
+
+test("expired slow sources are withheld even if fast API requests succeed", async () => {
+  let time = 1_000_000;
+  const { collector } = collectorWith({ now: () => time });
+  collector.data.hashrate = {
+    currentHashrate: 100e18,
+    currentDifficulty: 1e12,
+  };
+  collector.sourceHealth.set("hashrate", { success: true, updatedAt: time });
+  time += 4_000_000;
+  await collector.collectFast();
+  assert.equal(collector.publicationData().hashrate, null);
+  assert.ok(collector.data.hashrate);
 });
 
 test("publishes only states belonging to features the user created", async () => {

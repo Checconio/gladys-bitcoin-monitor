@@ -11,8 +11,9 @@ export class Scheduler {
     return Math.floor(Math.min(5000, intervalMs * 0.05) * this.random());
   }
 
-  async reconfigure(tasks) {
+  async reconfigure(tasks, { shouldRun = () => true } = {}) {
     await this.stop();
+    if (!shouldRun()) return;
     const generation = this.generation;
     for (const task of tasks) this.schedule(task, generation);
   }

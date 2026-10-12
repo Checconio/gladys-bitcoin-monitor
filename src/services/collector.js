@@ -1,5 +1,7 @@
-import { DEVICE_KEYS } from "../constants.js";
+import { DEVICE_TRANSPORTS } from "@gladysassistant/integration-sdk";
+import { DEVICE_KEYS, getDeviceIds } from "../constants.js";
 import { getStatesForDevice } from "../devices/index.js";
+import { DEVICE_SOURCES, isSourceHealthy } from "./sourceHealth.js";
 
 const ALL_DEVICE_KEYS = Object.values(DEVICE_KEYS);
 
@@ -37,6 +39,9 @@ export class Collector {
     };
     this.locks = new Map();
     this.lastPublished = new Map();
+    this.lastPublishedAt = new Map();
+    this.sourceHealth = new Map();
+    this.lastTransports = new Map();
     this.failedFastCycles = 0;
     this.connectionStatus = undefined;
   }
@@ -51,6 +56,9 @@ export class Collector {
 
   resetPublishedCache() {
     this.lastPublished.clear();
+    this.lastPublishedAt.clear();
+    this.lastTransports.clear();
+    this.connectionStatus = undefined;
   }
 
   async exclusive(name, operation) {
@@ -71,11 +79,59 @@ export class Collector {
     try {
       const value = await operation();
       assign(value);
+      this.sourceHealth.set(name, { success: true, updatedAt: this.now() });
       this.data.lastSuccessfulUpdate = new Date(this.now()).toISOString();
       return true;
     } catch (error) {
+      this.sourceHealth.set(name, { success: false, updatedAt: this.now() });
       this.logger?.warn(`${name} collection failed: ${errorMessage(error)}`);
       return false;
+    }
+  }
+
+  isSourceHealthy(source) {
+    return isSourceHealthy(source, this.sourceHealth, this.config, this.now());
+  }
+
+  // Keep the last-known-good cache, but never present a failed source as a new sample.
+  publicationData() {
+    const data = { ...this.data };
+    for (const source of this.sourceHealth.keys()) {
+      if (!this.isSourceHealthy(source)) data[source] = null;
+    }
+    if (data.lastBlock?.height !== data.tipHeight) data.lastBlock = null;
+    return data;
+  }
+
+  async publishTransports() {
+    const entries = [];
+    for (const [deviceKey, sources] of Object.entries(DEVICE_SOURCES)) {
+      const external_id = getDeviceIds(this.gladys, deviceKey).device;
+      if (!this.registry.hasDevice(external_id)) continue;
+      const healthy = sources.filter((source) => this.isSourceHealthy(source));
+      const entry = {
+        external_id,
+        transport: healthy.length
+          ? DEVICE_TRANSPORTS.CLOUD
+          : DEVICE_TRANSPORTS.UNREACHABLE,
+      };
+      if (healthy.length > 0 && healthy.length < sources.length) {
+        entry.degraded = true;
+        entry.message = {
+          en: "Some mempool.space data is unavailable. Last valid values are retained.",
+          fr: "Certaines données mempool.space sont indisponibles. Les dernières valeurs valides sont conservées.",
+        };
+      }
+      if (this.lastTransports.get(external_id) !== JSON.stringify(entry))
+        entries.push(entry);
+    }
+    if (!entries.length) return;
+    try {
+      await this.gladys.publishTransports(entries);
+      for (const entry of entries)
+        this.lastTransports.set(entry.external_id, JSON.stringify(entry));
+    } catch (error) {
+      this.logger?.warn(`Unable to publish transports: ${errorMessage(error)}`);
     }
   }
 
@@ -95,7 +151,15 @@ export class Collector {
   async trackFastCycle(successCount) {
     if (successCount > 0) {
       this.failedFastCycles = 0;
-      await this.updateConnectionStatus(true);
+      await this.updateConnectionStatus(
+        true,
+        successCount < 5
+          ? {
+              en: "Some mempool.space endpoints are unavailable; data is incomplete.",
+              fr: "Certains endpoints mempool.space sont indisponibles ; les données sont partielles.",
+            }
+          : undefined,
+      );
       return;
     }
     this.failedFastCycles += 1;
@@ -117,7 +181,7 @@ export class Collector {
     const states = getStatesForDevice(
       this.gladys,
       deviceKey,
-      this.data,
+      this.publicationData(),
       this.config,
       this.simulatorState,
       this.now(),
@@ -127,6 +191,10 @@ export class Collector {
         return false;
       return (
         force ||
+        this.now() -
+          (this.lastPublishedAt.get(state.device_feature_external_id) ??
+            -Infinity) >=
+          300_000 ||
         this.lastPublished.get(state.device_feature_external_id) !==
           this.valueSignature(state)
       );
@@ -138,6 +206,7 @@ export class Collector {
         state.device_feature_external_id,
         this.valueSignature(state),
       );
+      this.lastPublishedAt.set(state.device_feature_external_id, this.now());
     }
     return publishable.length;
   }
@@ -152,7 +221,7 @@ export class Collector {
       let successes = 0;
       if (
         await this.step(
-          "Precise fees",
+          "fees",
           () => this.client.getPreciseFees(),
           (value) => {
             this.data.fees = value;
@@ -162,7 +231,7 @@ export class Collector {
         successes += 1;
       if (
         await this.step(
-          "Projected blocks",
+          "projectedBlocks",
           () => this.client.getMempoolBlocks(),
           (value) => {
             this.data.projectedBlocks = value;
@@ -172,7 +241,7 @@ export class Collector {
         successes += 1;
       if (
         await this.step(
-          "Mempool",
+          "mempool",
           () => this.client.getMempool(),
           (value) => {
             this.data.mempool = value;
@@ -182,7 +251,7 @@ export class Collector {
         successes += 1;
       if (
         await this.step(
-          "Prices",
+          "prices",
           () => this.client.getPrices(),
           (value) => {
             this.data.prices = value;
@@ -195,19 +264,24 @@ export class Collector {
       let tipChanged = false;
       if (
         await this.step(
-          "Tip height",
+          "tipHeight",
           () => this.client.getTipHeight(),
           (value) => {
             this.data.tipHeight = value;
             tipChanged =
               previousHeight !== value || this.data.lastBlock?.height !== value;
+            if (!tipChanged)
+              this.sourceHealth.set("lastBlock", {
+                success: true,
+                updatedAt: this.now(),
+              });
           },
         )
       )
         successes += 1;
       if (tipChanged) {
         await this.step(
-          "Latest block details",
+          "lastBlock",
           () => this.client.getBlocksAtHeight(this.data.tipHeight),
           (value) => {
             this.data.lastBlock = value;
@@ -216,6 +290,7 @@ export class Collector {
       }
 
       await this.trackFastCycle(successes);
+      await this.publishTransports();
       await this.publishDevices(
         [
           DEVICE_KEYS.FEES,
@@ -233,12 +308,13 @@ export class Collector {
   async collectDifficulty({ force = false } = {}) {
     return this.exclusive("difficulty", async () => {
       const success = await this.step(
-        "Difficulty adjustment",
+        "difficulty",
         () => this.client.getDifficultyAdjustment(),
         (value) => {
           this.data.difficulty = value;
         },
       );
+      await this.publishTransports();
       if (success) await this.publishDevice(DEVICE_KEYS.NETWORK, { force });
       return success;
     });
@@ -247,12 +323,13 @@ export class Collector {
   async collectHashrate({ force = false } = {}) {
     return this.exclusive("hashrate", async () => {
       const success = await this.step(
-        "Hashrate",
+        "hashrate",
         () => this.client.getHashrate(),
         (value) => {
           this.data.hashrate = value;
         },
       );
+      await this.publishTransports();
       if (success) await this.publishDevice(DEVICE_KEYS.NETWORK, { force });
       return success;
     });

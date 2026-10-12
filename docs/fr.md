@@ -8,11 +8,42 @@ L'intégration est informative. Les estimations de frais ne garantissent aucun d
 
 ## Prérequis et installation
 
-- Gladys Assistant 4.86.0 ou plus récent.
+- Gladys Assistant 5.1.0 ou plus récent (widgets d'intégration).
 - Un accès Internet à `https://mempool.space`.
 - Aucun abonnement Gladys Plus et aucun compte tiers.
 
 Installez **Bitcoin Monitor** depuis le catalogue décentralisé des intégrations. Ouvrez sa page **Configuration**, enregistrez les réglages souhaités, puis ouvrez **Découverte**. Créez les cinq appareils proposés, ou seulement ceux dont vous avez besoin. L'intégration n'utilise jamais d'API Gladys interne non documentée pour les créer automatiquement.
+
+## Widgets de l'intégration
+
+Depuis l'éditeur du tableau de bord, ajoutez les widgets **Bitcoin** proposés par l'intégration. Cinq types de widgets fournissent les douze cartes des captures grâce aux sélecteurs **Vue** et **Graphique**. Le SDK 0.14.0 ne crée pas le tableau de bord ni la disposition automatiquement : les cartes sont ajoutées et placées depuis Gladys, qui gère leur apparence et leurs couleurs de graphique.
+
+Disposition conseillée pour **₿ Bitcoin — Frais & Réseau**, de haut en bas dans chaque colonne :
+
+| Rang | Colonne gauche                                 | Colonne centrale                     | Colonne droite                     |
+| ---- | ---------------------------------------------- | ------------------------------------ | ---------------------------------- |
+| 1    | Frais & opportunité → Opportunité de transfert | Simulateur → Simulation de transfert | État du réseau                     |
+| 2    | Frais & opportunité → Situation actuelle       | Simulateur → Comparatif actuel       | Graphique → Pression sur les frais |
+| 3    | Graphique → Frais Bitcoin                      | Graphique → Coût transaction         | Graphique → Rythme des blocs       |
+| 4    | Graphique → Blocs projetés                     | Graphique → Prix Bitcoin             | Minage & difficulté                |
+
+Laissez **Période → Par défaut pour ce graphique** : 12 h pour les blocs projetés, 7 jours pour le prix, 24 h pour les autres. Vous pouvez sélectionner une autre période dans chaque instance. Créez les cinq appareils dans **Découverte** pour activer tous les historiques ; ils se constituent au fil des collectes, sans téléchargement rétroactif. Les identifiants des appareils et features existants restent identiques et conservent leurs historiques.
+
+La carte **Simulation de transfert** affiche l'état du simulateur partagé. Pour le modifier, renseignez **Montant (BTC)**, **Taille virtuelle (vB)** et **Priorité** dans les réglages du widget, puis cliquez sur **Appliquer les réglages** sur la carte. Enregistrer les réglages du widget seul ne modifie pas le simulateur. Les entrées sont persistées localement et s'appliquent aussi au comparatif et aux graphiques de coût. Cette action ne réalise aucune transaction Bitcoin. Les commandes existantes du montant et de la priorité dans les cartes d'appareils restent utilisables.
+
+Corrections par rapport aux captures : « Simulation de transfert » décrit le calcul réel ; les taux ont l'unité sat/vB, la mempool et sa pression sont en vMB, le hashrate en EH/s. Le ratio frais/transfert est affiché « — » si le montant vaut zéro. Les valeurs actuelles indisponibles sont signalées explicitement. Les libellés des widgets sont disponibles en français et en anglais ; les légendes historiques utilisent les noms des features dans Gladys. Après un changement de devise, l'historique existant n'est pas converti : choisissez une période postérieure au changement pour comparer des montants dans la même devise.
+
+## Transports et fraîcheur des données
+
+Le manifeste déclare uniquement **cloud**, car les mesures et les estimations du simulateur dépendent de l'API publique mempool.space. Chaque appareil publie son propre état :
+
+- **Cloud** : toutes ses sources répondent et sont récentes.
+- **Cloud dégradé** : certaines sources manquent ou ont échoué ; une explication accompagne le badge.
+- **Inaccessible** : aucune de ses sources n'est disponible.
+
+Les réglages du simulateur restent locaux et modifiables hors ligne. Les badges reviennent automatiquement à l'état normal après récupération ; ils sont renvoyés à la reconnexion à Gladys et après création ou mise à jour d'un appareil. Le statut général signale les réponses partielles et passe hors ligne après trois cycles rapides entièrement échoués.
+
+Les valeurs constantes mais valides sont republiées lors de la première collecte après cinq minutes : cela évite que les frais Éco ou la taille TX disparaissent des historiques récents simplement parce qu'ils ne changent pas. Une source en échec n'est jamais republiée comme une mesure fraîche. Une source sans actualisation pendant deux intervalles plus 30 secondes est également masquée des valeurs courantes des widgets, sans effacer la dernière valeur mémorisée. Les widgets se rafraîchissent à partir du cache, sans multiplier les requêtes publiques.
 
 ## Configuration
 
@@ -102,7 +133,7 @@ fee_percent = fee_btc / montant_btc × 100 (seulement si le montant est > 0)
 
 Le montant transféré ne détermine **pas** les frais réseau. Une transaction de 0,01 BTC peut coûter autant qu'une transaction de 1 BTC si leur taille virtuelle et leur feerate sont identiques. La vSize dépend surtout du nombre et du type d'entrées et de sorties, pas de la valeur en BTC.
 
-Gladys ne fournit pas de champ numérique générique modifiable pour une feature `sensor/decimal`. Bitcoin Monitor associe donc **Transfer amount (BTC)** au contrat de consigne numérique pris en charge par Gladys, avec un pas de `0,00000001 BTC`. Le montant et la priorité se modifient directement depuis un tableau de bord ; la vSize reste dans le formulaire d'action validé. Les trois valeurs sont enregistrées atomiquement dans `/data/simulator-state.json`.
+Gladys ne fournit pas de champ numérique générique modifiable pour une feature `sensor/decimal`. Bitcoin Monitor associe donc **Transfer amount (BTC)** au contrat de consigne numérique pris en charge par Gladys, avec un pas de `0,00000001 BTC`. Le montant et la priorité se modifient directement depuis un tableau de bord ; la vSize se règle dans l’action de configuration ou dans les réglages du widget Simulateur. Les trois valeurs sont enregistrées atomiquement dans `/data/simulator-state.json`.
 
 Les valeurs sont arrondies avant publication : prix BTC et valeur du transfert à 2 décimales, frais fiat et pourcentages à 4, feerates à 3, valeurs BTC à 8, satoshis et vSize à l'entier. Gladys peut omettre un zéro final non significatif, mais aucun artefact de flottant JavaScript n'est publié.
 
@@ -121,7 +152,7 @@ En cas de panne temporaire, les dernières valeurs valides restent en mémoire ;
 - **Échec du test de connexion** : vérifiez le DNS et l'accès du pare-feu à `https://mempool.space`.
 - **HTTP 429 dans les logs** : augmentez l'intervalle d'actualisation rapide.
 - **Certaines métriques restent anciennes** : l'endpoint peut être temporairement indisponible ou invalide. Bitcoin Monitor conserve volontairement la dernière bonne valeur.
-- **Montant non modifiable après la mise à niveau** : mettez à jour l'appareil **Bitcoin Transaction Simulator** depuis la Découverte afin que Gladys reçoive la nouvelle définition modifiable. Utilisez **Configuration → Modifier le simulateur de transaction** uniquement pour la vSize.
+- **Montant non modifiable après la mise à niveau** : mettez à jour l'appareil **Bitcoin Transaction Simulator** depuis la Découverte afin que Gladys reçoive la nouvelle définition modifiable. La vSize peut aussi être réglée dans le widget Simulateur, avec le bouton **Appliquer les réglages**.
 - **Avertissement de persistance** : vérifiez que Gladys a monté le dossier `/data` de l'intégration et qu'il appartient à l'UID/GID 1000.
 
 ## Confidentialité

@@ -8,11 +8,36 @@ The integration is informational. Fee estimates are not confirmation guarantees,
 
 ## Prerequisites and installation
 
-- Gladys Assistant 4.86.0 or newer.
+- Gladys Assistant 5.1.0 or newer (integration widgets).
 - Internet access to `https://mempool.space`.
 - No Gladys Plus subscription and no third-party account.
 
 Install **Bitcoin Monitor** from the decentralized integration catalog. Open its **Configuration** page, save the desired settings, then open **Discovery**. Create all five proposed devices, or only the devices you want. The integration never calls an undocumented Gladys API to create them automatically.
+
+## Integration widgets
+
+Add **Bitcoin** widgets from the dashboard editor. Five widget types expose the twelve reference cards through their **View** and **Chart** settings. SDK 0.14.0 provides widget content, not automatic creation or placement of entire dashboards. Gladys controls the cards' appearance and chart colors.
+
+Suggested layout for **₿ Bitcoin — Fees & Network**, top to bottom in each column:
+
+| Row | Left column                               | Middle column                               | Right column                 |
+| --- | ----------------------------------------- | ------------------------------------------- | ---------------------------- |
+| 1   | Fees & opportunity → Transfer opportunity | Transaction simulator → Transfer simulation | Network status               |
+| 2   | Fees & opportunity → Current fees         | Transaction simulator → Current comparison  | History chart → Fee pressure |
+| 3   | History chart → Bitcoin fees              | History chart → Transaction cost            | History chart → Block timing |
+| 4   | History chart → Projected blocks          | History chart → Bitcoin price               | Mining & difficulty          |
+
+Keep **Period → Default for this chart** for 12 hours of projected blocks, seven days of price, and 24 hours for the other charts. Each instance can override its period. Create all five devices in **Discovery** to enable every history chart. History builds as data is collected; it is not backfilled. Existing device and feature IDs remain stable, preserving their history.
+
+The **Transfer simulation** card displays the shared simulator state. Set **Amount (BTC)**, **Transaction vSize (vB)** and **Priority** in the widget settings, then press **Apply widget settings** on the card. Saving widget settings alone does not modify the simulator. Applying them persists the inputs locally and also updates the comparison and cost charts; it never sends a Bitcoin transaction. Existing amount and priority commands on native device cards still work, and the configuration action remains available for vSize and priority.
+
+The reference layout is corrected to say “Transfer simulation”, with explicit sat/vB, vMB and EH/s units. A zero BTC amount displays “—” for the fee percentage; unavailable current values are explicit. Widget labels support English and French; chart legends use Gladys feature names. Changing currency does not convert old history: select a period after the change to compare amounts in the same currency.
+
+## Transport and data freshness
+
+The manifest declares only **cloud**, because measurements and simulator estimates depend on mempool.space. Each created device publishes its own badge: **cloud** when all sources are healthy, **degraded cloud** with an explanation when only some work, and **unreachable** when none are healthy. Simulator inputs remain locally editable offline. Recovery clears degraded status, and reconnection or device creation/update republishes the badges. The overall status reports partial responses and goes offline after three completely failed fast cycles.
+
+Healthy constant values are republished on the first collection after five minutes, keeping economy fees and transaction size in recent history. Failed sources retain their last valid cache without being republished as new samples. A source that has not refreshed for two polling intervals plus 30 seconds is also excluded from current widget values. Widgets use the collector cache and do not add public API requests.
 
 ## Configuration
 
@@ -102,7 +127,7 @@ fee_percent = fee_btc / transfer_amount_btc × 100 (only when amount > 0)
 
 The amount transferred does **not** determine the network fee. A transaction carrying 0.01 BTC can cost the same fee as one carrying 1 BTC when their virtual size and feerate are identical. vSize depends mostly on the number and type of inputs and outputs, not the BTC value.
 
-Gladys does not provide a generic writable numeric widget for a `sensor/decimal` feature. Bitcoin Monitor therefore maps **Transfer amount (BTC)** to Gladys' supported numeric setpoint contract, with a `0.00000001 BTC` step. The amount and priority can be changed directly from a dashboard; vSize remains in the validated action form. The three values are atomically persisted in `/data/simulator-state.json`.
+Gladys does not provide a generic writable numeric widget for a `sensor/decimal` feature. Bitcoin Monitor therefore maps **Transfer amount (BTC)** to Gladys' supported numeric setpoint contract, with a `0.00000001 BTC` step. The amount and priority can be changed directly from a dashboard; vSize is available in the configuration action or the simulator widget settings. The three values are atomically persisted in `/data/simulator-state.json`.
 
 Values are rounded before publication: BTC prices and transfer values to 2 decimals, fiat fees and percentages to 4, feerates to 3, BTC amounts to 8, and satoshis/vSize to integers. Gladys may omit an insignificant trailing zero, but JavaScript floating-point tails are never exposed.
 

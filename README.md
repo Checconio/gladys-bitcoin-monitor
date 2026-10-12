@@ -17,7 +17,9 @@ It uses the official [`@gladysassistant/integration-sdk`](https://github.com/Gla
 
 ## Dashboard example
 
-The metrics exposed by Bitcoin Monitor can be combined into a complete Gladys dashboard for fees, transaction simulation, mempool pressure, block activity, mining difficulty, and market price.
+The integration includes five native widget types with twelve views for fees, transaction simulation, mempool pressure, block activity, mining difficulty, and market price. Requires **Gladys 5.1.0 or newer** and SDK 0.14.0.
+
+Add Bitcoin widgets from the dashboard editor. The SDK exposes widget content, not an API to create an entire dashboard or place its cards automatically. The [English setup guide](docs/en.md#integration-widgets) and [French setup guide](docs/fr.md#widgets-de-lintégration) describe the three-column layout matching the reference below.
 
 ![Bitcoin Monitor dashboard example in Gladys](docs/images/bitcoin-monitor-dashboard.png)
 
@@ -59,7 +61,13 @@ The Configuration screen also exposes **Test connection**, **Refresh now**, and 
 
 ### Simulator input in Gladys
 
-Gladys does not render a generic writable `sensor/decimal` feature as a numeric input. Bitcoin Monitor maps **Transfer amount (BTC)** to Gladys' supported numeric setpoint contract, with a `0.00000001 BTC` step, so it can be entered directly from a Gladys dashboard. **Priority** is also directly editable. **Transaction vSize** remains available through the **Update transaction simulator** action.
+Gladys does not render a generic writable `sensor/decimal` feature as a numeric input. Bitcoin Monitor maps **Transfer amount (BTC)** to Gladys' supported numeric setpoint contract, with a `0.00000001 BTC` step, so it can be entered directly from a native device card. **Priority** is also directly editable. The integration's **Transaction simulator** widget offers amount, vSize and priority in its settings: press **Apply widget settings** to save them to the shared simulator. The existing **Update transaction simulator** configuration action remains available.
+
+## Transport and freshness
+
+The integration declares the `cloud` transport: public data and simulator estimates depend on mempool.space. Per-device badges show `cloud`, degraded `cloud` when only some sources work, or `unreachable` when none are healthy. Local simulator inputs remain editable during an outage. Badges are republished after reconnecting to Gladys and after device creation or updates.
+
+Healthy unchanged values are republished on the first collection after five minutes to keep constant fees and simulator inputs visible in recent history. Failed or expired sources retain their cached values without publishing them as new measurements; widget values show **Unavailable** until recovery. Opening widgets reads the existing cache and never adds mempool.space requests.
 
 ## Simulator semantics
 
@@ -108,6 +116,8 @@ src/services/collector.js        Last-known-good cache and batched publication
 src/services/scheduler.js        Non-overlapping setTimeout scheduler
 src/services/simulatorState.js   Atomic /data persistence
 src/integration.js               SDK handlers and lifecycle orchestration
+src/widgets.js                   Five native widget types and six history presets
+src/services/sourceHealth.js     Per-source freshness and device dependencies
 ```
 
 ## Development

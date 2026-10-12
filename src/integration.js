@@ -17,6 +17,7 @@ import { SIMULATOR_FEATURES } from "./devices/simulator.js";
 import { Collector } from "./services/collector.js";
 import { DeviceRegistry } from "./services/deviceRegistry.js";
 import { Scheduler } from "./services/scheduler.js";
+import { registerWidgets, WIDGET_KEYS } from "./widgets.js";
 import {
   normalizeSimulatorState,
   SimulatorStateStore,
@@ -55,6 +56,7 @@ export class BitcoinMonitorIntegration {
       simulatorState: this.simulatorState,
     });
     this.connectedInitialization = null;
+    this.connectionGeneration = 0;
   }
 
   async start() {
@@ -69,6 +71,7 @@ export class BitcoinMonitorIntegration {
   }
 
   registerHandlers() {
+    registerWidgets(this);
     this.gladys.onScanRequest(() => this.publishDiscovery());
     this.gladys.onSetValue((device, feature, value) =>
       this.onSetValue(device, feature, value),
@@ -77,7 +80,10 @@ export class BitcoinMonitorIntegration {
     this.gladys.onConfigUpdated((config) => this.onConfigUpdated(config));
     this.gladys.onDeviceCreated((device) => this.onDeviceUpserted(device));
     this.gladys.onDeviceUpdated((device) => this.onDeviceUpserted(device));
-    this.gladys.onDeviceDeleted((device) => this.registry.remove(device));
+    this.gladys.onDeviceDeleted((device) => {
+      this.registry.remove(device);
+      this.collector.resetPublishedCache();
+    });
 
     this.gladys.onAction("test_connection", async () => {
       try {
@@ -124,7 +130,9 @@ export class BitcoinMonitorIntegration {
     });
 
     this.gladys.on("connected", () => {
-      this.initializeAfterConnection().catch((error) => {
+      const generation = ++this.connectionGeneration;
+      this.initializeAfterConnection(generation).catch((error) => {
+        if (generation !== this.connectionGeneration) return;
         logger.error("Post-connection initialization failed", error);
         this.gladys
           .setConnectionStatus(false, {
@@ -135,15 +143,19 @@ export class BitcoinMonitorIntegration {
       });
     });
     this.gladys.on("disconnected", () => {
+      this.connectionGeneration += 1;
       this.scheduler
         .stop()
         .catch((error) => logger.error("Unable to stop scheduler", error));
     });
   }
 
-  async initializeAfterConnection() {
-    if (this.connectedInitialization) return this.connectedInitialization;
-    this.connectedInitialization = (async () => {
+  async initializeAfterConnection(generation = this.connectionGeneration) {
+    const previous = this.connectedInitialization;
+    const initialization = (async () => {
+      if (previous) await previous.catch(() => {});
+      if (generation !== this.connectionGeneration) return;
+      await this.scheduler.stop();
       const loadedConfig = normalizeConfig(await this.gladys.getConfig());
       this.config = loadedConfig;
       this.collector.setConfig(loadedConfig);
@@ -156,12 +168,15 @@ export class BitcoinMonitorIntegration {
       await this.publishDiscovery();
       this.collector.resetPublishedCache();
       await this.collector.collectAll({ force: true });
-      await this.startScheduler();
+      if (generation === this.connectionGeneration)
+        await this.startScheduler(generation);
     })();
+    this.connectedInitialization = initialization;
     try {
-      return await this.connectedInitialization;
+      return await initialization;
     } finally {
-      this.connectedInitialization = null;
+      if (this.connectedInitialization === initialization)
+        this.connectedInitialization = null;
     }
   }
 
@@ -171,24 +186,27 @@ export class BitcoinMonitorIntegration {
     );
   }
 
-  async startScheduler() {
-    await this.scheduler.reconfigure([
-      {
-        name: "fast",
-        intervalSeconds: this.config.fast_poll_seconds,
-        run: () => this.collector.collectFast(),
-      },
-      {
-        name: "difficulty",
-        intervalSeconds: this.config.difficulty_poll_seconds,
-        run: () => this.collector.collectDifficulty(),
-      },
-      {
-        name: "hashrate",
-        intervalSeconds: this.config.hashrate_poll_seconds,
-        run: () => this.collector.collectHashrate(),
-      },
-    ]);
+  async startScheduler(generation = this.connectionGeneration) {
+    await this.scheduler.reconfigure(
+      [
+        {
+          name: "fast",
+          intervalSeconds: this.config.fast_poll_seconds,
+          run: () => this.collector.collectFast(),
+        },
+        {
+          name: "difficulty",
+          intervalSeconds: this.config.difficulty_poll_seconds,
+          run: () => this.collector.collectDifficulty(),
+        },
+        {
+          name: "hashrate",
+          intervalSeconds: this.config.hashrate_poll_seconds,
+          run: () => this.collector.collectHashrate(),
+        },
+      ],
+      { shouldRun: () => generation === this.connectionGeneration },
+    );
   }
 
   async onSetValue(_device, feature, value) {
@@ -220,13 +238,12 @@ export class BitcoinMonitorIntegration {
   }
 
   async updateSimulator(nextState) {
-    this.simulatorState = normalizeSimulatorState(
-      nextState,
-      this.simulatorState,
-    );
-    this.collector.setSimulatorState(this.simulatorState);
-    await this.stateStore.save(this.simulatorState);
+    const normalized = normalizeSimulatorState(nextState, this.simulatorState);
+    await this.stateStore.save(normalized);
+    this.simulatorState = normalized;
+    this.collector.setSimulatorState(normalized);
     await this.collector.publishSimulator({ force: true });
+    this.gladys.requestWidgetRefresh("simulator");
   }
 
   async onPoll(device) {
@@ -237,12 +254,14 @@ export class BitcoinMonitorIntegration {
 
   async onDeviceUpserted(device) {
     this.registry.upsert(device);
+    this.collector.resetPublishedCache();
     const deviceKey = getDeviceKey(this.gladys, device.external_id);
     if (!deviceKey) return;
     await this.collector.collectForDevice(deviceKey, { force: true });
   }
 
   async onConfigUpdated(rawConfig) {
+    const generation = this.connectionGeneration;
     const previous = this.config;
     let next;
     try {
@@ -270,10 +289,12 @@ export class BitcoinMonitorIntegration {
     await this.publishDiscovery();
     this.collector.resetPublishedCache();
     await this.collector.collectAll({ force: true });
-    await this.startScheduler();
+    await this.startScheduler(generation);
+    for (const key of WIDGET_KEYS) this.gladys.requestWidgetRefresh(key);
   }
 
   async shutdown(signal) {
+    this.connectionGeneration += 1;
     logger.info(`Received ${signal}; stopping Bitcoin Monitor`);
     await this.scheduler.stop();
     await this.stateStore.save(this.simulatorState);

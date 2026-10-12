@@ -150,9 +150,15 @@ export function getFeesStates(gladys, data) {
         PUBLICATION_PRECISION.FEE_RATE,
       ),
     },
-    { key: FEES_FEATURES.OPPORTUNITY_SCORE, state: advice.score },
-    { key: FEES_FEATURES.OPPORTUNITY_ADVICE, text: advice.text },
   ];
+  // The score also depends on projected congestion: a failed forecast is not
+  // evidence that congestion disappeared.
+  if (Array.isArray(data.projectedBlocks)) {
+    entries.push(
+      { key: FEES_FEATURES.OPPORTUNITY_SCORE, state: advice.score },
+      { key: FEES_FEATURES.OPPORTUNITY_ADVICE, text: advice.text },
+    );
+  }
   [
     FEES_FEATURES.BLOCK_1_MEDIAN,
     FEES_FEATURES.BLOCK_2_MEDIAN,
