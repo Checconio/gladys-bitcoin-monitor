@@ -1,5 +1,5 @@
 export const INTEGRATION_NAME = "Bitcoin Monitor";
-export const INTEGRATION_VERSION = "1.0.0";
+export const INTEGRATION_VERSION = "1.1.0";
 export const DATA_DIRECTORY = process.env.DATA_DIRECTORY || "/data";
 export const MEMPOOL_API_BASE_URL = "https://mempool.space";
 
