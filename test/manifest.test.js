@@ -8,6 +8,27 @@ const manifestUrl = new URL(
 );
 const packageUrl = new URL("../package.json", import.meta.url);
 
+test("keeps every localized widget label within the catalog limit", async (t) => {
+  const manifest = JSON.parse(await readFile(manifestUrl, "utf8"));
+
+  for (const [index, widget] of manifest.widgets.entries()) {
+    const languages = new Set(["en", "fr", ...Object.keys(widget.label ?? {})]);
+    for (const language of languages) {
+      const path = `widgets[${index}] (${widget.key}).label.${language}`;
+      await t.test(path, () => {
+        const label = widget.label?.[language];
+        assert.equal(typeof label, "string", `${path} must be a string`);
+        assert.ok(label.trim().length > 0, `${path} must not be empty`);
+        const length = [...label].length;
+        assert.ok(
+          length <= 30,
+          `${path} must have at most 30 Unicode code points (received ${length})`,
+        );
+      });
+    }
+  }
+});
+
 test("keeps simulator inputs and release versions coherent in the manifest", async () => {
   const manifestSource = await readFile(manifestUrl, "utf8");
   const manifest = JSON.parse(manifestSource);

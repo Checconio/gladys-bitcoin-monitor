@@ -340,8 +340,8 @@
     {
       "key": "simulator",
       "label": {
-        "en": "Bitcoin — Transaction simulator",
-        "fr": "Bitcoin — Simulateur de transaction"
+        "en": "Bitcoin — Transaction sim.",
+        "fr": "Bitcoin — Simulateur BTC"
       },
       "icon": "dollar-sign",
       "settings": [
