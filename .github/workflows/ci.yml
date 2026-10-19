@@ -4,10 +4,19 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -23,4 +32,26 @@ jobs:
       - name: Lint
         run: npm run lint
       - name: Test
-        run: npm test
+        run: |
+          mkdir -p reports/tests
+          npm test -- --test-reporter=spec --test-reporter=junit --test-reporter-destination=stdout --test-reporter-destination=reports/tests/junit.xml
+      - name: Upload test report
+        if: always() && hashFiles('reports/tests/junit.xml') != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: tests-unitaires-integration
+          path: reports/tests/junit.xml
+          retention-days: 1
+          if-no-files-found: error
+
+  docker:
+    name: Docker build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Build image with the Gladys manifest
+        run: |
+          manifest="$(jq -c . gladys-assistant-integration.json)"
+          docker build --build-arg "GLADYS_INTEGRATION_MANIFEST=$manifest" -t bitcoin-monitor:ci .

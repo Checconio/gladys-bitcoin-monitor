@@ -131,6 +131,8 @@ npm run lint
 npm test
 ```
 
+GitHub Actions runs formatting, lint and the complete test suite (including all localized widget labels) on pull requests and pushes to `main`. It also checks that the Docker image builds with the embedded Gladys manifest, without publishing the image. Run these checks manually from **Actions → CI → Run workflow**. Test results are available in the job logs and as a JUnit artifact retained for one day, including when tests fail. A newer run cancels the previous run for the same pull request or branch.
+
 To connect the integration directly to a development Gladys instance:
 
 ```bash
