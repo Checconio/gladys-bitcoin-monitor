@@ -122,7 +122,10 @@ src/services/sourceHealth.js     Per-source freshness and device dependencies
 
 ## Development
 
-Validated runtime: Node.js 24.22.1 LTS and npm 11.18.0. The `engines.node >=20` metadata remains unchanged for existing external hosts; it is not a security certification of those runtimes. Use patched Node 24 LTS for deployment.
+Validated runtime: Node.js **24.22.1 LTS** and npm 11.18.0. The package's
+`engines.node >=20` remains a compatibility declaration for existing external
+hosts, not a security certification of older runtimes. Use the corrected Node
+24 LTS runtime for deployment.
 
 ```bash
 npm ci
@@ -177,23 +180,78 @@ The build fails if the manifest label differs from the manifest copied into the 
 
 The release workflow publishes `linux/amd64` and `linux/arm64` images to GHCR.
 
-### Node 24 security baseline and validation (2026-10-24)
+### Node 24 security baseline and validation
 
-The [21 October Node security advisory](https://nodejs.org/en/blog/vulnerability/october-2026-security-releases) identifies [24.22.1 LTS](https://nodejs.org/en/blog/release/v24.22.1) as the corrected Node 24 release. The Dockerfile pins `node:24.22.1-alpine` to the multi-platform index digest `sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53`, verified against Docker Hub with `docker buildx imagetools inspect node:24.22.1-alpine`. Both release architectures are present. A build-time assertion rejects Node outside the corrected 24 LTS branch. The existing release workflow uses this same Dockerfile.
+Version 1.1.1 pins `node:24.22.1-alpine` to the multi-platform index digest
+`sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53`.
+The registry index was inspected on 2026-10-28 and includes amd64 and arm64.
+Node 24.22.1 is the corrected LTS release listed in the official
+[21 October security advisory](https://nodejs.org/en/blog/vulnerability/october-2026-security-releases)
+and [release notes](https://nodejs.org/en/blog/release/v24.22.1).
+The same Dockerfile is used for CI and release builds. `npm ci --omit=dev`
+requires the committed lockfile and its integrity hashes.
 
-Local audit: `npm ci` succeeded with the unchanged lockfile; all 66 fixture tests, ESLint and Prettier passed on Windows with Node 24.22.1 / npm 11.18.0. Docker build/runtime validation could not run because the Docker Desktop Linux engine was unavailable. The added CI matrix must pass before claiming Alpine compatibility: it builds amd64 and arm64, runs the fixtures without network access using production dependencies, checks the image manifest and default command, and exercises UID 1000, writable `/data` on a read-only root filesystem, persistence across containers, and SIGTERM/SIGINT through PID 1 dumb-init and the real SDK shutdown handler. The lifecycle fixture replaces only Gladys connect/disconnect; it does not contact an instance. This does not certify a live Gladys deployment or an external PM2 installation.
+Local validation on 2026-10-28: `npm ci` succeeded and all 68 fixture/unit tests
+passed on Windows with Node 24.22.1. These cover the real SDK's data mapping,
+discovery, reconnect behavior, widgets, polling and atomic simulator persistence
+using fictitious data. No production Gladys connection is used.
+The pinned Alpine image was built locally on linux/amd64 and the isolated
+Docker runtime checks passed. Docker Desktop initially returned HTTP 500 but
+subsequently completed the checks without a service restart.
 
-This standalone image runs `dumb-init -- node index.js`. PM2 in a shared Web hosting image belongs to that hosting environment and is neither installed nor needed here. If an external operator already uses PM2, retain its existing environment and single-process configuration, select the patched Node 24 interpreter explicitly, and validate SIGINT/SIGTERM and a writable `DATA_DIRECTORY` in staging. Multiple processes must not share the simulator state file. No production PM2 process was inspected or restarted by this audit.
+Run `node scripts/docker-smoke.mjs` on a working Docker host. CI runs this check:
+it builds the image, runs the test suite under Alpine, rejects a mismatched manifest, checks its label and default
+command, then runs network-isolated fixtures under the actual dumb-init
+entrypoint with UID 1000 and a read-only root filesystem. It verifies both
+SIGTERM and SIGINT, clean exit, and simulator persistence between containers
+using a disposable `/data` volume. The real SDK shutdown hooks are exercised;
+only connection/disconnection are stubbed. This is not a live Gladys end-to-end
+test. CI executes the host architecture; arm64 runtime validation remains an
+operator check on an arm64 host before an arm64 deployment.
 
-### Operator update and rollback recipe
+For each security update, verify the official Node 24 LTS advisory, inspect
+`docker buildx imagetools inspect node:<patch>-alpine`, and update the Dockerfile
+tag and index digest together, plus the CI/release Node version and fixture
+version assertion. Run `npm ci`, formatting, lint, tests and the Docker smoke
+check before release. Never substitute Node Current. The digest freezes the
+base image, but `apk add dumb-init` still uses the Alpine package repository:
+builds are not guaranteed byte-identical. Record the final image digest and
+installed Alpine package versions for deployment and rollback; refresh the base
+digest for Alpine security rebuilds even when the Node patch is unchanged.
 
-1. Review the latest official Node 24 LTS security advisory. Resolve the intended patch tag with `docker buildx imagetools inspect`, verify amd64/arm64, and update the Dockerfile patch plus index digest and CI Node version together. Update the minimum assertion when the security baseline changes. Never substitute Node Current. A digest pin requires deliberate security refreshes.
-2. Run `npm ci`, formatting, lint and tests, then build with the real manifest as above and `--pull`. On a Linux Docker host run `bash scripts/check-docker.sh bitcoin-monitor:test`. CI performs these container checks for both architectures (arm64 through QEMU). Inspect build logs for the effective Node guard. Do not publish until these checks pass.
-3. Record the resulting application image digest, source revision, base digest and lockfile. The base and npm graph are pinned; `apk add dumb-init` still uses Alpine repositories, so a complete rebuild is not byte-for-byte reproducible. Retain the tested final image by digest for exact deployment/rollback. Review Alpine package updates separately.
-4. In an approved deployment window, preserve the previous application image digest and take a consistent backup/snapshot of `/data` before replacing the container. Keep the same environment, manifest, volume and UID 1000 permissions; provision bind-mount permissions beforehand. Never put tokens or real data in audit artifacts. Allow graceful shutdown time for polling and persistence.
-5. Validate discovery, publication and simulator persistence on staging fixtures before production rollout. If rollback is needed, stop the replacement gracefully and restore the previous application image by digest with the same configuration and volume; restore the saved data snapshot only if necessary. No data format change is introduced here. Rollback to an older vulnerable runtime is temporary mitigation only.
+### Hosting and operator rollback
 
-These are operator instructions; this audit does not publish images, restart services or modify existing Gladys instances.
+This standalone Docker image runs `dumb-init -- node index.js` as `node`; it does
+not install or use PM2. PM2 in a shared Web hosting image belongs to that host's
+supervisor and runtime, which this Dockerfile neither updates nor validates.
+For an existing external PM2 launch, keep the same environment contract and
+entrypoint, select the corrected Node 24 interpreter explicitly, use a single
+fork instance, and allow enough shutdown time for pending polling and state
+writes. The SDK handles PM2's usual SIGINT as well as Docker's SIGTERM; PM2
+itself and the shared Web image have not been executed in this audit. IPC
+`shutdown` messages are not a supported substitute for these signals.
+
+Operator recipe (not executed by this audit):
+
+1. Validate the candidate image with the isolated checks above on the target
+   architecture. Record its immutable image digest, Node version and package
+   inventory, and retain the previous image digest and launch configuration.
+2. Back up the existing `/data` volume privately with a consistent snapshot.
+   Preserve UID/GID and permissions; bind mounts must be writable by UID 1000.
+   Do not put the simulator state, tokens or host configuration in Git or CI
+   artifacts.
+3. During an approved maintenance window, stop the old integration gracefully
+   with a sufficient timeout (for example 60 seconds), then start the candidate
+   by digest with the same environment, selector and persistent `/data` mount.
+   Do not run both instances against the same selector or volume concurrently.
+4. Verify discovery, fresh measurements, simulator state and clean shutdown on
+   the intended Gladys host. On failure, stop the candidate and restart the
+   retained previous digest with the saved configuration and volume. Restore
+   the private snapshot only if data recovery is necessary. This change does
+   not migrate the state format.
+
+The npm download cache `.npm-cache/` is excluded from Git, formatting, lint and
+the Docker build context. It is local disposable data, not a release artifact.
 
 ## Publishing
 

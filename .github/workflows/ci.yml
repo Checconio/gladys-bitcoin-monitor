@@ -23,7 +23,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 24.22.1
+          node-version: "24.22.1"
           cache: npm
       - name: Install dependencies
         run: npm ci
@@ -54,17 +54,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: Set up Node.js for image metadata checks
+      - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 24.22.1
-      - name: Build image with the Gladys manifest
-        run: |
-          manifest="$(jq -c . gladys-assistant-integration.json)"
-          docker build --pull --platform '${{ matrix.platform }}' --build-arg "GLADYS_INTEGRATION_MANIFEST=$manifest" -t bitcoin-monitor:ci .
-      - name: Verify isolated Docker runtime
-        env:
-          DOCKER_DEFAULT_PLATFORM: ${{ matrix.platform }}
-        run: bash scripts/check-docker.sh bitcoin-monitor:ci
+          node-version: "24.22.1"
+      - name: Build and verify isolated Docker runtime
+        run: node scripts/docker-smoke.mjs
