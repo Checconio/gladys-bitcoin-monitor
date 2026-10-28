@@ -206,8 +206,10 @@ entrypoint with UID 1000 and a read-only root filesystem. It verifies both
 SIGTERM and SIGINT, clean exit, and simulator persistence between containers
 using a disposable `/data` volume. The real SDK shutdown hooks are exercised;
 only connection/disconnection are stubbed. This is not a live Gladys end-to-end
-test. CI executes the host architecture; arm64 runtime validation remains an
-operator check on an arm64 host before an arm64 deployment.
+test. Since version 1.1.2, CI selects each matrix platform through
+`DOCKER_DEFAULT_PLATFORM`, checks the built image architecture, and runs both
+amd64 and arm64 with QEMU available for emulation. Native arm64 deployment
+validation remains an operator check on the target host.
 
 For each security update, verify the official Node 24 LTS advisory, inspect
 `docker buildx imagetools inspect node:<patch>-alpine`, and update the Dockerfile

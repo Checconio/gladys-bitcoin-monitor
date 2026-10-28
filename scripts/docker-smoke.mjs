@@ -22,7 +22,15 @@ try {
     image,
     ".",
   );
-  const config = JSON.parse(docker("image", "inspect", image))[0].Config;
+  const metadata = JSON.parse(docker("image", "inspect", image))[0];
+  if (process.env.DOCKER_DEFAULT_PLATFORM) {
+    assert.equal(
+      `${metadata.Os}/${metadata.Architecture}`,
+      process.env.DOCKER_DEFAULT_PLATFORM,
+      "built image must match the requested CI platform",
+    );
+  }
+  const config = metadata.Config;
   assert.equal(config.User, "node");
   assert.deepEqual(config.Entrypoint, ["dumb-init", "--"]);
   assert.deepEqual(config.Cmd, ["node", "index.js"]);
