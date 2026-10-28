@@ -3,10 +3,10 @@ import prettier from "eslint-config-prettier";
 import globals from "globals";
 
 export default [
-  { ignores: ["coverage/**", "node_modules/**"] },
+  { ignores: ["coverage/**", "node_modules/**", ".npm-cache/**"] },
   js.configs.recommended,
   {
-    files: ["**/*.js"],
+    files: ["**/*.js", "**/*.mjs"],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",

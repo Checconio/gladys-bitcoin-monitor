@@ -4,3 +4,4 @@ reports/
 .env
 *.log
 simulator-state.json
+.npm-cache/

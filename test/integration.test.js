@@ -18,6 +18,31 @@ function setup() {
   return { gladys, app };
 }
 
+for (const signal of ["SIGTERM", "SIGINT"]) {
+  test(`${signal} drains active polling before persisting state and cancels timers`, async () => {
+    const { app } = setup();
+    await app.startScheduler();
+    let release;
+    const active = new Promise((resolve) => {
+      release = resolve;
+    });
+    app.scheduler.active.add(active);
+    let saved = false;
+    app.stateStore.save = async (state) => {
+      assert.equal(state, app.simulatorState);
+      saved = true;
+    };
+    const generation = app.connectionGeneration;
+    const stopping = app.shutdown(signal);
+    assert.equal(app.connectionGeneration, generation + 1);
+    assert.equal(app.scheduler.timers.size, 0);
+    assert.equal(saved, false);
+    release();
+    await stopping;
+    assert.equal(saved, true);
+  });
+}
+
 test("reconnection during initialization resyncs again and starts only the current scheduler", async () => {
   const { app } = setup();
   let release;

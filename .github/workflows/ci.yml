@@ -23,7 +23,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 24
+          node-version: "24.22.1"
           cache: npm
       - name: Install dependencies
         run: npm ci
@@ -51,7 +51,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
-      - name: Build image with the Gladys manifest
-        run: |
-          manifest="$(jq -c . gladys-assistant-integration.json)"
-          docker build --build-arg "GLADYS_INTEGRATION_MANIFEST=$manifest" -t bitcoin-monitor:ci .
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24.22.1"
+      - name: Build and verify isolated Docker runtime
+        run: node scripts/docker-smoke.mjs
