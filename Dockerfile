@@ -1,4 +1,6 @@
-FROM node:24-alpine
+FROM node:24.22.1-alpine@sha256:06d7adf3e0ef61a13f1d28682726366f97a15aa1888c934d3ecec86c33918b53
+
+RUN node -e 'const [major, minor, patch] = process.versions.node.split(".").map(Number); if (major !== 24 || minor < 22 || (minor === 22 && patch < 1) || !process.release.lts) throw new Error("Node 24 LTS >=24.22.1 required");'
 
 ARG GLADYS_INTEGRATION_MANIFEST
 
@@ -6,7 +8,7 @@ RUN apk add --no-cache dumb-init
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
 COPY index.js ./
